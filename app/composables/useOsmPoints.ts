@@ -26,6 +26,29 @@ type OsmElement = {
 
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
+const ENDPOINTS = [
+	"https://overpass.kumi.systems/api/interpreter",
+	"https://overpass-api.de/api/interpreter",
+];
+
+async function queryOverpass(query: string): Promise<Response> {
+	let lastError: unknown;
+	for (const endpoint of ENDPOINTS) {
+		try {
+			const res = await fetch(endpoint, {
+				method: "POST",
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+				body: `data=${encodeURIComponent(query)}`,
+			});
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			return res;
+		} catch (err) {
+			lastError = err;
+		}
+	}
+	throw lastError;
+}
+
 export function useOsmPoints({ cacheKey, query, defaultName }: Options) {
 	const points = ref<OsmPoint[]>([]);
 	const loading = ref(false);
@@ -45,13 +68,7 @@ export function useOsmPoints({ cacheKey, query, defaultName }: Options) {
 		error.value = null;
 
 		try {
-			const res = await fetch("https://overpass.kumi.systems/api/interpreter", {
-				method: "POST",
-				body: query,
-			});
-
-			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
+			const res = await queryOverpass(query);
 			const json = await res.json();
 			const data: OsmPoint[] = (json.elements as OsmElement[])
 				.map((el) => {
