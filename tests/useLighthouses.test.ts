@@ -51,7 +51,7 @@ describe("useLighthouses", () => {
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"lighthouses_jp_v3",
+			"lighthouses_jp_v4",
 			JSON.stringify({
 				data: [{ id: 3, lat: 33.0, lon: 130.0, name: "キャッシュ灯台" }],
 				timestamp: Date.now(),

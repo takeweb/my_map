@@ -1,5 +1,6 @@
-const QUERY = `[out:json][timeout:60];
-node["man_made"="lighthouse"](24,122,46,154);
+const QUERY = `[out:json][timeout:55];
+area(3600282408)->.japan;
+node["man_made"="lighthouse"](area.japan);
 out body;`;
 
 export function useLighthouses() {
@@ -9,7 +10,7 @@ export function useLighthouses() {
 		error,
 		fetchPoints: fetchLighthouses,
 	} = useOsmPoints({
-		cacheKey: "lighthouses_jp_v3",
+		cacheKey: "lighthouses_jp_v4",
 		query: QUERY,
 		defaultName: "灯台",
 	});

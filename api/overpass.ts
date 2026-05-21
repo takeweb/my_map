@@ -1,20 +1,30 @@
-export const config = { runtime: "edge" };
+export const config = { maxDuration: 60 };
 
-export default async function handler(req: Request): Promise<Response> {
+// biome-ignore lint/suspicious/noExplicitAny: Vercel Node.js handler signature
+export default async function handler(req: any, res: any) {
 	if (req.method !== "POST") {
-		return new Response("Method Not Allowed", { status: 405 });
+		res.status(405).send("Method Not Allowed");
+		return;
 	}
-	const body = await req.text();
-	const res = await fetch("https://overpass-api.de/api/interpreter", {
+
+	const chunks: Buffer[] = [];
+	for await (const chunk of req) {
+		chunks.push(Buffer.from(chunk));
+	}
+	const body = Buffer.concat(chunks).toString();
+
+	const upstream = await fetch("https://overpass-api.de/api/interpreter", {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
 		body,
 	});
-	const text = await res.text();
-	return new Response(text, {
-		status: res.status,
-		headers: {
-			"Content-Type": res.headers.get("Content-Type") ?? "application/json",
-		},
-	});
+
+	const text = await upstream.text();
+	res
+		.status(upstream.status)
+		.setHeader(
+			"Content-Type",
+			upstream.headers.get("Content-Type") ?? "application/json",
+		)
+		.send(text);
 }

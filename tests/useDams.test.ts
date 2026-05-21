@@ -73,7 +73,7 @@ describe("useDams", () => {
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"dams_jp_v4",
+			"dams_jp_v5",
 			JSON.stringify({
 				data: [{ id: 4, lat: 36.0, lon: 137.0, name: "キャッシュダム" }],
 				timestamp: Date.now(),
