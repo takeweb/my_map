@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import GeoJSON from "ol/format/GeoJSON";
+import type Point from "ol/geom/Point";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import OlMap from "ol/Map";
@@ -15,6 +16,10 @@ import View from "ol/View";
 const mapContainer = ref<HTMLDivElement | null>(null);
 const popupName = ref<string | null>(null);
 const popupPos = ref<[number, number] | null>(null);
+
+const searchQuery = ref("");
+const searchCoords = ref<Array<{ name: string; coord: number[] }>>([]);
+const searchPopups = ref<Array<{ name: string; pixel: [number, number] }>>([]);
 
 const visibleLayers = reactive({
 	lighthouses: true,
@@ -117,6 +122,48 @@ watch(
 	(v) => damLayer?.setVisible(v),
 );
 
+function updateSearchPixels() {
+	if (!map) return;
+	searchPopups.value = searchCoords.value
+		.map(({ name, coord }) => {
+			const pixel = map!.getPixelFromCoordinate(coord);
+			return pixel ? { name, pixel: pixel as [number, number] } : null;
+		})
+		.filter((p): p is { name: string; pixel: [number, number] } => p !== null);
+}
+
+function doSearch() {
+	const q = searchQuery.value.trim();
+	if (!q) return;
+
+	const results: Array<{ name: string; coord: number[] }> = [];
+	for (const source of [lighthouseSource, castleSource, damSource]) {
+		for (const feature of source.getFeatures()) {
+			const name = feature.get("name") as string;
+			if (name?.includes(q)) {
+				const geom = feature.getGeometry() as Point;
+				results.push({ name, coord: geom.getCoordinates() });
+			}
+		}
+	}
+
+	searchCoords.value = results;
+	updateSearchPixels();
+
+	if (results.length > 0) {
+		map?.getView().animate({ center: results[0].coord, duration: 500 });
+	}
+}
+
+// biome-ignore lint/correctness/noUnusedVariables: used in <template>
+function clearAll() {
+	searchQuery.value = "";
+	searchCoords.value = [];
+	searchPopups.value = [];
+	popupName.value = null;
+	popupPos.value = null;
+}
+
 onMounted(async () => {
 	if (!mapContainer.value) return;
 
@@ -140,6 +187,8 @@ onMounted(async () => {
 			zoom: 5,
 		}),
 	});
+
+	map.on("postrender", updateSearchPixels);
 
 	map.on("click", (e) => {
 		const feature = map?.forEachFeatureAtPixel(e.pixel, (f) => f);
@@ -189,6 +238,31 @@ onUnmounted(() => {
       {{ fetchError }}
     </div>
 
+    <!-- 検索 -->
+    <div class="absolute left-4 top-4 flex gap-2">
+      <input
+        v-model="searchQuery"
+        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow focus:outline-none"
+        placeholder="名称で検索..."
+        type="text"
+        @keyup.enter="doSearch"
+      />
+      <button
+        class="rounded-lg bg-white px-3 py-2 text-sm shadow hover:bg-gray-50"
+        type="button"
+        @click="doSearch"
+      >
+        検索
+      </button>
+      <button
+        class="rounded-lg bg-white px-3 py-2 text-sm shadow hover:bg-gray-50"
+        type="button"
+        @click="clearAll"
+      >
+        クリア
+      </button>
+    </div>
+
     <!-- レイヤー切り替え -->
     <div class="absolute right-4 top-4 rounded-lg bg-white/90 p-3 shadow-md">
       <p class="mb-2 text-xs font-bold text-gray-700">レイヤー</p>
@@ -212,13 +286,23 @@ onUnmounted(() => {
       </label>
     </div>
 
-    <!-- ポップアップ -->
+    <!-- クリックポップアップ -->
     <div
       v-if="popupName && popupPos"
       class="absolute rounded-lg bg-white px-3 py-2 text-sm shadow-lg"
       :style="{ left: `${popupPos[0] + 12}px`, top: `${popupPos[1] - 12}px` }"
     >
       {{ popupName }}
+    </div>
+
+    <!-- 検索結果ポップアップ -->
+    <div
+      v-for="(popup, i) in searchPopups"
+      :key="i"
+      class="absolute rounded-lg bg-yellow-50 px-3 py-2 text-sm shadow-lg border border-yellow-300"
+      :style="{ left: `${popup.pixel[0] + 12}px`, top: `${popup.pixel[1] - 12}px` }"
+    >
+      {{ popup.name }}
     </div>
   </div>
 </template>
