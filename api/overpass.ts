@@ -15,7 +15,10 @@ export default async function handler(req: any, res: any) {
 
 	const upstream = await fetch("https://overpass-api.de/api/interpreter", {
 		method: "POST",
-		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+			"User-Agent": "my-map-proxy/1.0",
+		},
 		body,
 	});
 
