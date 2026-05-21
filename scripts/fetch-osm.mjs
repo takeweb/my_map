@@ -19,16 +19,24 @@ out body;`,
 		defaultName: "城",
 		query: `[out:json][timeout:120];
 area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
-node["historic"="castle"](area.japan);
-out body;`,
+(
+  node["historic"="castle"](area.japan);
+  way["historic"="castle"](area.japan);
+  relation["historic"="castle"](area.japan);
+);
+out center;`,
 	},
 	{
 		file: "dams",
 		defaultName: "ダム",
 		query: `[out:json][timeout:120];
 area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
-node["waterway"="dam"](area.japan);
-out body;`,
+(
+  node["waterway"="dam"](area.japan);
+  way["waterway"="dam"](area.japan);
+  relation["waterway"="dam"](area.japan);
+);
+out center;`,
 	},
 ];
 

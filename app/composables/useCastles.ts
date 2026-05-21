@@ -5,7 +5,7 @@ export function useCastles() {
 		error,
 		fetchPoints: fetchCastles,
 	} = useOsmPoints({
-		cacheKey: "castles_jp_v6",
+		cacheKey: "castles_jp_v7",
 		dataUrl: "/data/castles.json",
 		defaultName: "城",
 	});

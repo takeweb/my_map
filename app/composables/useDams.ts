@@ -5,7 +5,7 @@ export function useDams() {
 		error,
 		fetchPoints: fetchDams,
 	} = useOsmPoints({
-		cacheKey: "dams_jp_v6",
+		cacheKey: "dams_jp_v7",
 		dataUrl: "/data/dams.json",
 		defaultName: "ダム",
 	});

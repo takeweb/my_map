@@ -30,7 +30,7 @@ describe("useCastles", () => {
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"castles_jp_v6",
+			"castles_jp_v7",
 			JSON.stringify({
 				data: [{ id: 4, lat: 34.0, lon: 131.0, name: "キャッシュ城" }],
 				timestamp: Date.now(),
