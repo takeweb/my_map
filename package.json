@@ -1,0 +1,33 @@
+{
+	"name": "my_map",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"build": "nuxt build",
+		"dev": "nuxt dev",
+		"generate": "nuxt generate",
+		"preview": "nuxt preview",
+		"postinstall": "nuxt prepare",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"test": "vitest",
+		"test:run": "vitest run"
+	},
+	"dependencies": {
+		"nuxt": "^4.4.6",
+		"ol": "^10.9.0",
+		"vue": "^3.5.34",
+		"vue-router": "^5.0.7"
+	},
+	"packageManager": "pnpm@10.28.1+sha512.7d7dbbca9e99447b7c3bf7a73286afaaf6be99251eb9498baefa7d406892f67b879adb3a1d7e687fc4ccc1a388c7175fbaae567a26ab44d1067b54fcb0d6a316",
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.15",
+		"@nuxt/test-utils": "^4.0.3",
+		"@tailwindcss/vite": "^4.3.0",
+		"@vue/test-utils": "^2.4.10",
+		"happy-dom": "^20.9.0",
+		"tailwindcss": "^4.3.0",
+		"vitest": "^4.1.7"
+	}
+}
