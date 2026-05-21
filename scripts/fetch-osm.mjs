@@ -45,17 +45,31 @@ out center;`,
 
 mkdirSync(join(ROOT, "public", "data"), { recursive: true });
 
+async function fetchWithRetry(query, file, retries = 3) {
+	for (let i = 0; i < retries; i++) {
+		if (i > 0) {
+			const wait = 30 * i;
+			process.stdout.write(`retry ${i}/${retries - 1} (wait ${wait}s)... `);
+			await new Promise((r) => setTimeout(r, wait * 1000));
+		}
+		const res = await fetch(ENDPOINT, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded",
+				"User-Agent": "my-map-build/1.0",
+			},
+			body: `data=${encodeURIComponent(query)}`,
+		});
+		if (res.ok) return res;
+		if (res.status !== 504 || i === retries - 1)
+			throw new Error(`HTTP ${res.status} for ${file}`);
+	}
+}
+
 for (const { file, defaultName, query } of FEATURES) {
 	process.stdout.write(`Fetching ${file}... `);
 
-	const res = await fetch(ENDPOINT, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/x-www-form-urlencoded",
-			"User-Agent": "my-map-build/1.0",
-		},
-		body: `data=${encodeURIComponent(query)}`,
-	});
+	const res = await fetchWithRetry(query, file);
 
 	if (!res.ok) throw new Error(`HTTP ${res.status} for ${file}`);
 
