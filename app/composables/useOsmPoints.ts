@@ -47,7 +47,8 @@ export function useOsmPoints({ cacheKey, query, defaultName }: Options) {
 		try {
 			const res = await fetch("/api/overpass", {
 				method: "POST",
-				body: query,
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ query }),
 			});
 
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -1,12 +1,14 @@
 export default defineEventHandler(async (event) => {
-	const body = await readRawBody(event);
-	if (!body) {
-		throw createError({ statusCode: 400, message: "Query body is required" });
+	const { query } = await readBody<{ query: string }>(event);
+
+	if (!query) {
+		throw createError({ statusCode: 400, message: "query is required" });
 	}
 
 	const res = await fetch("https://overpass-api.de/api/interpreter", {
 		method: "POST",
-		body,
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: new URLSearchParams({ data: query }),
 	});
 
 	if (!res.ok) {
