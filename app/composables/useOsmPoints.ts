@@ -45,10 +45,9 @@ export function useOsmPoints({ cacheKey, query, defaultName }: Options) {
 		error.value = null;
 
 		try {
-			const res = await fetch("/api/overpass", {
+			const res = await fetch("https://overpass.kumi.systems/api/interpreter", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ query }),
+				body: query,
 			});
 
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);

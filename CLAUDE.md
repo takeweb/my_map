@@ -51,13 +51,13 @@ TailwindCSS v4を使用。`@tailwindcss/vite` プラグインを `nuxt.config.ts
 
 テストファイルは `tests/` ディレクトリに配置する。`vitest.config.ts` で `environment: "nuxt"` を指定しており、`mountSuspended`（`@nuxt/test-utils/runtime`）を使ってNuxtコンテキスト付きでコンポーネントをマウントできる。
 
-### Overpass API プロキシ
+### Overpass API エンドポイント
 
-`overpass-api.de` は本番オリジンからの直接リクエストを CORS で拒否するため、`server/api/overpass.post.ts` にサーバーサイドプロキシを設けている。クライアントは `/api/overpass` に POST し、サーバーが Overpass へ中継する（サーバーサイド fetch に CORS 制限はない）。`useOsmPoints.ts` のリクエスト先は `/api/overpass` で固定。
+`overpass-api.de` は本番オリジン（Vercel）からのリクエストで CORS ヘッダーを返さない場合がある。`ssr: false` による静的デプロイでは Nitro の Serverless Function が機能しないためサーバーサイドプロキシも使えない。そのため CORS 対応済みの公開ミラー `overpass.kumi.systems` に直接リクエストする。`text/plain` 形式の POST（クエリを body にそのまま渡す）はプリフライトが不要で CORS を回避できる。
 
 ### デプロイ
 
-`vercel.json` で `pnpm build` をビルドコマンドとして指定。`nuxt build` が Nitro サーバーを生成し、Vercel がページを SPA として、`server/api/` を Serverless Function として配置する。`pnpm generate`（静的生成）は server route が使えないため不可。
+`vercel.json` で `pnpm generate` をビルドコマンドとして指定し、`.output/public` をスタティックファイルとして Vercel に配信する。`ssr: false` での静的デプロイのため `server/` ディレクトリは使用しない。
 
 ## Coding Conventions
 
