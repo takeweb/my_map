@@ -13,6 +13,9 @@ node_modules
 logs
 *.log
 
+# Generated OSM data (recreated by pnpm fetch / pnpm generate)
+public/data/
+
 # Misc
 .DS_Store
 .fleet

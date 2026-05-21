@@ -10,16 +10,14 @@ describe("useLighthouses", () => {
 		vi.unstubAllGlobals();
 	});
 
-	it("fetches lighthouses from Overpass API", async () => {
+	it("fetches lighthouses from data file", async () => {
 		vi.stubGlobal(
 			"fetch",
 			vi.fn().mockResolvedValue({
 				ok: true,
-				json: async () => ({
-					elements: [
-						{ id: 1, lat: 35.0, lon: 135.0, tags: { "name:ja": "テスト灯台" } },
-					],
-				}),
+				json: async () => [
+					{ id: 1, lat: 35.0, lon: 135.0, name: "野島埼灯台" },
+				],
 			}),
 		);
 
@@ -27,31 +25,12 @@ describe("useLighthouses", () => {
 		await fetchLighthouses();
 
 		expect(lighthouses.value).toHaveLength(1);
-		expect(lighthouses.value[0].name).toBe("テスト灯台");
-	});
-
-	it("falls back to name tag when name:ja is absent", async () => {
-		vi.stubGlobal(
-			"fetch",
-			vi.fn().mockResolvedValue({
-				ok: true,
-				json: async () => ({
-					elements: [
-						{ id: 2, lat: 34.0, lon: 136.0, tags: { name: "Osaka Light" } },
-					],
-				}),
-			}),
-		);
-
-		const { lighthouses, fetchLighthouses } = useLighthouses();
-		await fetchLighthouses();
-
-		expect(lighthouses.value[0].name).toBe("Osaka Light");
+		expect(lighthouses.value[0].name).toBe("野島埼灯台");
 	});
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"lighthouses_jp_v4",
+			"lighthouses_jp_v5",
 			JSON.stringify({
 				data: [{ id: 3, lat: 33.0, lon: 130.0, name: "キャッシュ灯台" }],
 				timestamp: Date.now(),
@@ -68,34 +47,19 @@ describe("useLighthouses", () => {
 		expect(lighthouses.value[0].name).toBe("キャッシュ灯台");
 	});
 
-	it("excludes elements whose name is only the generic label", async () => {
+	it("sets error state when data file fetch fails", async () => {
 		vi.stubGlobal(
 			"fetch",
-			vi.fn().mockResolvedValue({
-				ok: true,
-				json: async () => ({
-					elements: [
-						{
-							id: 10,
-							lat: 35.0,
-							lon: 135.0,
-							tags: { "name:ja": "野島埼灯台" },
-						},
-						{ id: 11, lat: 34.0, lon: 134.0, tags: { name: "灯台" } },
-						{ id: 12, lat: 33.0, lon: 133.0 },
-					],
-				}),
-			}),
+			vi.fn().mockResolvedValue({ ok: false, status: 404 }),
 		);
 
-		const { lighthouses, fetchLighthouses } = useLighthouses();
+		const { error, fetchLighthouses } = useLighthouses();
 		await fetchLighthouses();
 
-		expect(lighthouses.value).toHaveLength(1);
-		expect(lighthouses.value[0].name).toBe("野島埼灯台");
+		expect(error.value).toBe("灯台データの取得に失敗しました");
 	});
 
-	it("sets error state when API call fails", async () => {
+	it("sets error state when network fails", async () => {
 		vi.stubGlobal(
 			"fetch",
 			vi.fn().mockRejectedValue(new Error("Network error")),

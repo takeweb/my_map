@@ -5,7 +5,8 @@
 	"scripts": {
 		"build": "nuxt build",
 		"dev": "nuxt dev",
-		"generate": "nuxt generate",
+		"fetch": "node scripts/fetch-osm.mjs",
+		"generate": "node scripts/fetch-osm.mjs && nuxt generate",
 		"preview": "nuxt preview",
 		"postinstall": "nuxt prepare",
 		"lint": "biome check .",

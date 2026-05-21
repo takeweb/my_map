@@ -9,7 +9,4 @@ export default defineNuxtConfig({
 	vite: {
 		plugins: [tailwindcss()],
 	},
-	routeRules: {
-		"/api/overpass": { proxy: "https://overpass-api.de/api/interpreter" },
-	},
 });

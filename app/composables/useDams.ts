@@ -1,8 +1,3 @@
-const QUERY = `[out:json][timeout:55];
-area(3600282408)->.japan;
-node["waterway"="dam"](area.japan);
-out body;`;
-
 export function useDams() {
 	const {
 		points: dams,
@@ -10,8 +5,8 @@ export function useDams() {
 		error,
 		fetchPoints: fetchDams,
 	} = useOsmPoints({
-		cacheKey: "dams_jp_v5",
-		query: QUERY,
+		cacheKey: "dams_jp_v6",
+		dataUrl: "/data/dams.json",
 		defaultName: "ダム",
 	});
 	return { dams, loading, error, fetchDams };

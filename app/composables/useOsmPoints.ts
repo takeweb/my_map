@@ -12,21 +12,13 @@ interface CacheEntry {
 
 interface Options {
 	cacheKey: string;
-	query: string;
+	dataUrl: string;
 	defaultName: string;
 }
 
-type OsmElement = {
-	id: number;
-	lat?: number;
-	lon?: number;
-	center?: { lat: number; lon: number };
-	tags?: Record<string, string>;
-};
-
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
-export function useOsmPoints({ cacheKey, query, defaultName }: Options) {
+export function useOsmPoints({ cacheKey, dataUrl, defaultName }: Options) {
 	const points = ref<OsmPoint[]>([]);
 	const loading = ref(false);
 	const error = ref<string | null>(null);
@@ -45,29 +37,9 @@ export function useOsmPoints({ cacheKey, query, defaultName }: Options) {
 		error.value = null;
 
 		try {
-			const res = await fetch("/api/overpass", {
-				method: "POST",
-				headers: { "Content-Type": "application/x-www-form-urlencoded" },
-				body: `data=${encodeURIComponent(query)}`,
-			});
-
+			const res = await fetch(dataUrl);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-			const json = await res.json();
-			const data: OsmPoint[] = (json.elements as OsmElement[])
-				.map((el) => {
-					const lat = el.lat ?? el.center?.lat;
-					const lon = el.lon ?? el.center?.lon;
-					if (lat === undefined || lon === undefined) return null;
-					return {
-						id: el.id,
-						lat,
-						lon,
-						name: el.tags?.["name:ja"] ?? el.tags?.name ?? defaultName,
-					};
-				})
-				.filter((x): x is OsmPoint => x !== null && x.name !== defaultName);
-
+			const data: OsmPoint[] = await res.json();
 			points.value = data;
 			localStorage.setItem(
 				cacheKey,

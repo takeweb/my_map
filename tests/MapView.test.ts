@@ -6,7 +6,7 @@ vi.stubGlobal(
 	"fetch",
 	vi.fn().mockResolvedValue({
 		ok: true,
-		json: async () => ({ elements: [] }),
+		json: async () => [],
 	}),
 );
 

@@ -10,7 +10,7 @@ const FEATURES = [
 		file: "lighthouses",
 		defaultName: "灯台",
 		query: `[out:json][timeout:120];
-area(3600282408)->.japan;
+area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
 node["man_made"="lighthouse"](area.japan);
 out body;`,
 	},
@@ -18,7 +18,7 @@ out body;`,
 		file: "castles",
 		defaultName: "城",
 		query: `[out:json][timeout:120];
-area(3600282408)->.japan;
+area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
 node["historic"="castle"](area.japan);
 out body;`,
 	},
@@ -26,7 +26,7 @@ out body;`,
 		file: "dams",
 		defaultName: "ダム",
 		query: `[out:json][timeout:120];
-area(3600282408)->.japan;
+area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
 node["waterway"="dam"](area.japan);
 out body;`,
 	},

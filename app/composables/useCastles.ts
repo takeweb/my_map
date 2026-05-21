@@ -1,8 +1,3 @@
-const QUERY = `[out:json][timeout:55];
-area(3600282408)->.japan;
-node["historic"="castle"](area.japan);
-out body;`;
-
 export function useCastles() {
 	const {
 		points: castles,
@@ -10,8 +5,8 @@ export function useCastles() {
 		error,
 		fetchPoints: fetchCastles,
 	} = useOsmPoints({
-		cacheKey: "castles_jp_v5",
-		query: QUERY,
+		cacheKey: "castles_jp_v6",
+		dataUrl: "/data/castles.json",
 		defaultName: "城",
 	});
 	return { castles, loading, error, fetchCastles };
