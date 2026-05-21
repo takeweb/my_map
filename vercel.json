@@ -1,5 +1,5 @@
 {
 	"buildCommand": "pnpm generate",
 	"outputDirectory": ".output/public",
-	"framework": "nuxtjs"
+	"rewrites": [{ "source": "/:path*", "destination": "/index.html" }]
 }
