@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import Feature from "ol/Feature";
-import Point from "ol/geom/Point";
+import GeoJSON from "ol/format/GeoJSON";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import OlMap from "ol/Map";
@@ -40,11 +39,11 @@ const {
 } = useCastles();
 
 // ダム
-const { 
-  dams, 
-  loading: loadingDams, 
-  error: errorDams, 
-  fetchDams 
+const {
+	dams,
+	loading: loadingDams,
+	error: errorDams,
+	fetchDams,
 } = useDams();
 
 // biome-ignore lint/correctness/noUnusedVariables: used in <template>
@@ -56,6 +55,7 @@ const fetchError = computed(
 	() => errorLighthouses.value ?? errorCastles.value ?? errorDams.value,
 );
 
+const geoJsonFormat = new GeoJSON();
 const lighthouseSource = new VectorSource();
 const castleSource = new VectorSource();
 const damSource = new VectorSource();
@@ -74,27 +74,29 @@ const lighthouseStyle = makeStyle("#f97316");
 const castleStyle = makeStyle("#3b82f6");
 const damStyle = makeStyle("#10b981");
 
-function toFeatures(items: { lat: number; lon: number; name: string }[]) {
-	return items.map(
-		(item) =>
-			new Feature({
-				geometry: new Point(fromLonLat([item.lon, item.lat])),
-				name: item.name,
-			}),
-	);
-}
-
 watch(lighthouses, (data) => {
 	lighthouseSource.clear();
-	lighthouseSource.addFeatures(toFeatures(data));
+	if (data) {
+		lighthouseSource.addFeatures(
+			geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }),
+		);
+	}
 });
 watch(castles, (data) => {
 	castleSource.clear();
-	castleSource.addFeatures(toFeatures(data));
+	if (data) {
+		castleSource.addFeatures(
+			geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }),
+		);
+	}
 });
 watch(dams, (data) => {
 	damSource.clear();
-	damSource.addFeatures(toFeatures(data));
+	if (data) {
+		damSource.addFeatures(
+			geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }),
+		);
+	}
 });
 
 let lighthouseLayer: VectorLayer | null = null;
@@ -194,19 +196,19 @@ onUnmounted(() => {
         <input v-model="visibleLayers.lighthouses" class="accent-orange-500" type="checkbox" />
         <span class="size-3 rounded-full bg-orange-500" />
         灯台
-        <span class="text-xs text-gray-400">({{ lighthouses.length }})</span>
+        <span class="text-xs text-gray-400">({{ lighthouses?.features.length ?? 0 }})</span>
       </label>
       <label class="mt-1.5 flex cursor-pointer items-center gap-2 text-sm">
         <input v-model="visibleLayers.castles" class="accent-blue-500" type="checkbox" />
         <span class="size-3 rounded-full bg-blue-500" />
         城
-        <span class="text-xs text-gray-400">({{ castles.length }})</span>
+        <span class="text-xs text-gray-400">({{ castles?.features.length ?? 0 }})</span>
       </label>
       <label class="mt-1.5 flex cursor-pointer items-center gap-2 text-sm">
         <input v-model="visibleLayers.dams" class="accent-emerald-500" type="checkbox" />
         <span class="size-3 rounded-full bg-emerald-500" />
         ダム
-        <span class="text-xs text-gray-400">({{ dams.length }})</span>
+        <span class="text-xs text-gray-400">({{ dams?.features.length ?? 0 }})</span>
       </label>
     </div>
 

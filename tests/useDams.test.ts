@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDams } from "~/composables/useDams";
 
+const mockGeojson = (name: string) => ({
+	type: "FeatureCollection",
+	features: [
+		{
+			type: "Feature",
+			geometry: { type: "Point", coordinates: [137.66, 36.566] },
+			properties: { id: 1, name },
+		},
+	],
+});
+
 describe("useDams", () => {
 	beforeEach(() => {
 		localStorage.clear();
@@ -15,24 +26,22 @@ describe("useDams", () => {
 			"fetch",
 			vi.fn().mockResolvedValue({
 				ok: true,
-				json: async () => [
-					{ id: 1, lat: 36.566, lon: 137.66, name: "黒部ダム" },
-				],
+				json: async () => mockGeojson("黒部ダム"),
 			}),
 		);
 
 		const { dams, fetchDams } = useDams();
 		await fetchDams();
 
-		expect(dams.value).toHaveLength(1);
-		expect(dams.value[0].name).toBe("黒部ダム");
+		expect(dams.value?.features).toHaveLength(1);
+		expect(dams.value?.features[0].properties.name).toBe("黒部ダム");
 	});
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"dams_jp_v7",
+			"dams_jp_v8",
 			JSON.stringify({
-				data: [{ id: 4, lat: 36.0, lon: 137.0, name: "キャッシュダム" }],
+				data: mockGeojson("キャッシュダム"),
 				timestamp: Date.now(),
 			}),
 		);
@@ -44,7 +53,7 @@ describe("useDams", () => {
 		await fetchDams();
 
 		expect(fetchMock).not.toHaveBeenCalled();
-		expect(dams.value[0].name).toBe("キャッシュダム");
+		expect(dams.value?.features[0].properties.name).toBe("キャッシュダム");
 	});
 
 	it("sets error state when data file fetch fails", async () => {

@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useLighthouses } from "~/composables/useLighthouses";
 
+const mockGeojson = (name: string) => ({
+	type: "FeatureCollection",
+	features: [
+		{
+			type: "Feature",
+			geometry: { type: "Point", coordinates: [135.0, 35.0] },
+			properties: { id: 1, name },
+		},
+	],
+});
+
 describe("useLighthouses", () => {
 	beforeEach(() => {
 		localStorage.clear();
@@ -15,24 +26,22 @@ describe("useLighthouses", () => {
 			"fetch",
 			vi.fn().mockResolvedValue({
 				ok: true,
-				json: async () => [
-					{ id: 1, lat: 35.0, lon: 135.0, name: "野島埼灯台" },
-				],
+				json: async () => mockGeojson("野島埼灯台"),
 			}),
 		);
 
 		const { lighthouses, fetchLighthouses } = useLighthouses();
 		await fetchLighthouses();
 
-		expect(lighthouses.value).toHaveLength(1);
-		expect(lighthouses.value[0].name).toBe("野島埼灯台");
+		expect(lighthouses.value?.features).toHaveLength(1);
+		expect(lighthouses.value?.features[0].properties.name).toBe("野島埼灯台");
 	});
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"lighthouses_jp_v5",
+			"lighthouses_jp_v8",
 			JSON.stringify({
-				data: [{ id: 3, lat: 33.0, lon: 130.0, name: "キャッシュ灯台" }],
+				data: mockGeojson("キャッシュ灯台"),
 				timestamp: Date.now(),
 			}),
 		);
@@ -44,7 +53,7 @@ describe("useLighthouses", () => {
 		await fetchLighthouses();
 
 		expect(fetchMock).not.toHaveBeenCalled();
-		expect(lighthouses.value[0].name).toBe("キャッシュ灯台");
+		expect(lighthouses.value?.features[0].properties.name).toBe("キャッシュ灯台");
 	});
 
 	it("sets error state when data file fetch fails", async () => {

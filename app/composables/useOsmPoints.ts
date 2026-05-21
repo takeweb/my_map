@@ -1,12 +1,14 @@
-export interface OsmPoint {
-	id: number;
-	lat: number;
-	lon: number;
-	name: string;
+export interface OsmFeatureCollection {
+	type: "FeatureCollection";
+	features: Array<{
+		type: "Feature";
+		geometry: { type: string; coordinates: number[] };
+		properties: { id: number; name: string };
+	}>;
 }
 
 interface CacheEntry {
-	data: OsmPoint[];
+	data: OsmFeatureCollection;
 	timestamp: number;
 }
 
@@ -19,7 +21,7 @@ interface Options {
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 export function useOsmPoints({ cacheKey, dataUrl, defaultName }: Options) {
-	const points = ref<OsmPoint[]>([]);
+	const geojson = ref<OsmFeatureCollection | null>(null);
 	const loading = ref(false);
 	const error = ref<string | null>(null);
 
@@ -28,7 +30,7 @@ export function useOsmPoints({ cacheKey, dataUrl, defaultName }: Options) {
 		if (raw) {
 			const cache: CacheEntry = JSON.parse(raw);
 			if (Date.now() - cache.timestamp < CACHE_TTL) {
-				points.value = cache.data;
+				geojson.value = cache.data;
 				return;
 			}
 		}
@@ -39,8 +41,8 @@ export function useOsmPoints({ cacheKey, dataUrl, defaultName }: Options) {
 		try {
 			const res = await fetch(dataUrl);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			const data: OsmPoint[] = await res.json();
-			points.value = data;
+			const data: OsmFeatureCollection = await res.json();
+			geojson.value = data;
 			localStorage.setItem(
 				cacheKey,
 				JSON.stringify({ data, timestamp: Date.now() }),
@@ -52,5 +54,5 @@ export function useOsmPoints({ cacheKey, dataUrl, defaultName }: Options) {
 		}
 	}
 
-	return { points, loading, error, fetchPoints };
+	return { geojson, loading, error, fetchPoints };
 }

@@ -27,15 +27,15 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 
 ### フィーチャーデータ（灯台・城・ダム）
 
-**ビルド時取得方式**を採用。`scripts/fetch-osm.mjs` が `pnpm generate` の前工程として実行され、`overpass-api.de` から日本国内データを取得して `public/data/*.json` に保存する。ブラウザはこの静的 JSON を GET するだけなので CORS・タイムアウト・ランタイム API 障害の影響を受けない。
+**ビルド時取得方式**を採用。`scripts/fetch-osm.mjs` が `pnpm generate` の前工程として実行され、`overpass-api.de` から日本国内データを取得して `public/data/*.geojson` に保存する。ブラウザはこの静的GeoJSONを GET するだけなので CORS・タイムアウト・ランタイム API 障害の影響を受けない。
 
-`app/composables/useOsmPoints.ts` が静的 JSON のフェッチとキャッシュを担う共通実装。各コンポーザブルは `dataUrl` とキャッシュキーを渡す薄いラッパー。
+`app/composables/useOsmPoints.ts` が静的GeoJSONのフェッチとキャッシュを担う共通実装。各コンポーザブルは `dataUrl` とキャッシュキーを渡す薄いラッパー。`MapView.vue` では `ol/format/GeoJSON` の `readFeatures` でフィーチャーに変換する（`featureProjection: "EPSG:3857"` 指定が必要）。
 
 | コンポーザブル | OSMタグ | データファイル | キャッシュキー | 色 |
 |---|---|---|---|---|
-| `useLighthouses` | `man_made=lighthouse` | `/data/lighthouses.json` | `lighthouses_jp_v5` | オレンジ `#f97316` |
-| `useCastles` | `historic=castle` | `/data/castles.json` | `castles_jp_v6` | 青 `#3b82f6` |
-| `useDams` | `waterway=dam` | `/data/dams.json` | `dams_jp_v6` | 緑 `#10b981` |
+| `useLighthouses` | `man_made=lighthouse` | `/data/lighthouses.geojson` | `lighthouses_jp_v8` | オレンジ `#f97316` |
+| `useCastles` | `historic=castle` | `/data/castles.geojson` | `castles_jp_v8` | 青 `#3b82f6` |
+| `useDams` | `waterway=dam` | `/data/dams.geojson` | `dams_jp_v8` | 緑 `#10b981` |
 
 - キャッシュは `localStorage` に7日間保持する（キャッシュキーにはバージョンサフィックスを付ける。データ形式やフィルタを変更したらサフィックスを上げて旧キャッシュを無効化する）
 - **地理フィルタ**: `scripts/fetch-osm.mjs` が `area["ISO3166-1"="JP"]["admin_level"="2"]` で日本の行政境界内に絞る。ビルド時実行なのでタイムアウト制約なし（120秒設定）
@@ -51,7 +51,7 @@ TailwindCSS v4を使用。`@tailwindcss/vite` プラグインを `nuxt.config.ts
 
 ### テスト
 
-テストファイルは `tests/` ディレクトリに配置する。`vitest.config.ts` で `environment: "nuxt"` を指定しており、`mountSuspended`（`@nuxt/test-utils/runtime`）を使ってNuxtコンテキスト付きでコンポーネントをマウントできる。fetch モックは `OsmPoint[]` 配列を直接返す形式（Overpass 形式ではない）。
+テストファイルは `tests/` ディレクトリに配置する。`vitest.config.ts` で `environment: "nuxt"` を指定しており、`mountSuspended`（`@nuxt/test-utils/runtime`）を使ってNuxtコンテキスト付きでコンポーネントをマウントできる。fetch モックは GeoJSON `FeatureCollection` 形式で返す（`{ type: "FeatureCollection", features: [...] }`）。
 
 ### デプロイ
 

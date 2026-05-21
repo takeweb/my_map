@@ -1,12 +1,12 @@
 export function useLighthouses() {
 	const {
-		points: lighthouses,
+		geojson: lighthouses,
 		loading,
 		error,
 		fetchPoints: fetchLighthouses,
 	} = useOsmPoints({
-		cacheKey: "lighthouses_jp_v5",
-		dataUrl: "/data/lighthouses.json",
+		cacheKey: "lighthouses_jp_v8",
+		dataUrl: "/data/lighthouses.geojson",
 		defaultName: "灯台",
 	});
 	return { lighthouses, loading, error, fetchLighthouses };

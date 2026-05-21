@@ -57,19 +57,25 @@ for (const { file, defaultName, query } of FEATURES) {
 	if (!res.ok) throw new Error(`HTTP ${res.status} for ${file}`);
 
 	const { elements } = await res.json();
-	const data = elements
+	const features = elements
 		.map((el) => {
 			const lat = el.lat ?? el.center?.lat;
 			const lon = el.lon ?? el.center?.lon;
 			if (lat == null || lon == null) return null;
 			const name = el.tags?.["name:ja"] ?? el.tags?.name ?? defaultName;
-			return name === defaultName ? null : { id: el.id, lat, lon, name };
+			if (name === defaultName) return null;
+			return {
+				type: "Feature",
+				geometry: { type: "Point", coordinates: [lon, lat] },
+				properties: { id: el.id, name },
+			};
 		})
 		.filter(Boolean);
 
+	const geojson = { type: "FeatureCollection", features };
 	writeFileSync(
-		join(ROOT, "public", "data", `${file}.json`),
-		JSON.stringify(data),
+		join(ROOT, "public", "data", `${file}.geojson`),
+		JSON.stringify(geojson),
 	);
-	console.log(`${data.length} items`);
+	console.log(`${features.length} items`);
 }

@@ -1,12 +1,12 @@
 export function useDams() {
 	const {
-		points: dams,
+		geojson: dams,
 		loading,
 		error,
 		fetchPoints: fetchDams,
 	} = useOsmPoints({
-		cacheKey: "dams_jp_v7",
-		dataUrl: "/data/dams.json",
+		cacheKey: "dams_jp_v8",
+		dataUrl: "/data/dams.geojson",
 		defaultName: "ダム",
 	});
 	return { dams, loading, error, fetchDams };

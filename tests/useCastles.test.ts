@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCastles } from "~/composables/useCastles";
 
+const mockGeojson = (name: string) => ({
+	type: "FeatureCollection",
+	features: [
+		{
+			type: "Feature",
+			geometry: { type: "Point", coordinates: [135.526, 34.6873] },
+			properties: { id: 1, name },
+		},
+	],
+});
+
 describe("useCastles", () => {
 	beforeEach(() => {
 		localStorage.clear();
@@ -15,24 +26,22 @@ describe("useCastles", () => {
 			"fetch",
 			vi.fn().mockResolvedValue({
 				ok: true,
-				json: async () => [
-					{ id: 1, lat: 34.6873, lon: 135.526, name: "大阪城" },
-				],
+				json: async () => mockGeojson("大阪城"),
 			}),
 		);
 
 		const { castles, fetchCastles } = useCastles();
 		await fetchCastles();
 
-		expect(castles.value).toHaveLength(1);
-		expect(castles.value[0].name).toBe("大阪城");
+		expect(castles.value?.features).toHaveLength(1);
+		expect(castles.value?.features[0].properties.name).toBe("大阪城");
 	});
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"castles_jp_v7",
+			"castles_jp_v8",
 			JSON.stringify({
-				data: [{ id: 4, lat: 34.0, lon: 131.0, name: "キャッシュ城" }],
+				data: mockGeojson("キャッシュ城"),
 				timestamp: Date.now(),
 			}),
 		);
@@ -44,7 +53,7 @@ describe("useCastles", () => {
 		await fetchCastles();
 
 		expect(fetchMock).not.toHaveBeenCalled();
-		expect(castles.value[0].name).toBe("キャッシュ城");
+		expect(castles.value?.features[0].properties.name).toBe("キャッシュ城");
 	});
 
 	it("sets error state when data file fetch fails", async () => {
