@@ -1,9 +1,8 @@
-const QUERY = `[out:json][timeout:90];
-area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
+const QUERY = `[out:json][timeout:60];
 (
-  node["waterway"="dam"](area.japan);
-  way["waterway"="dam"](area.japan);
-  relation["waterway"="dam"](area.japan);
+  node["waterway"="dam"](24,122,46,154);
+  way["waterway"="dam"](24,122,46,154);
+  relation["waterway"="dam"](24,122,46,154);
 );
 out center;`;
 
@@ -14,7 +13,7 @@ export function useDams() {
 		error,
 		fetchPoints: fetchDams,
 	} = useOsmPoints({
-		cacheKey: "dams_jp_v2",
+		cacheKey: "dams_jp_v3",
 		query: QUERY,
 		defaultName: "ダム",
 	});

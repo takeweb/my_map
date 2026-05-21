@@ -1,9 +1,8 @@
-const QUERY = `[out:json][timeout:90];
-area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
+const QUERY = `[out:json][timeout:60];
 (
-  node["historic"="castle"](area.japan);
-  way["historic"="castle"](area.japan);
-  relation["historic"="castle"](area.japan);
+  node["historic"="castle"](24,122,46,154);
+  way["historic"="castle"](24,122,46,154);
+  relation["historic"="castle"](24,122,46,154);
 );
 out center;`;
 
@@ -14,7 +13,7 @@ export function useCastles() {
 		error,
 		fetchPoints: fetchCastles,
 	} = useOsmPoints({
-		cacheKey: "castles_jp_v2",
+		cacheKey: "castles_jp_v3",
 		query: QUERY,
 		defaultName: "城",
 	});

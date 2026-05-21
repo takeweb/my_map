@@ -30,15 +30,15 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 
 | コンポーザブル | OSMタグ | キャッシュキー | 要素種別 | 色 |
 |---|---|---|---|---|
-| `useLighthouses` | `man_made=lighthouse` | `lighthouses_japan` | node のみ | オレンジ `#f97316` |
-| `useCastles` | `historic=castle` | `castles_japan` | node / way / relation | 青 `#3b82f6` |
-| `useDams` | `waterway=dam` | `dams_japan` | node / way / relation | 緑 `#10b981` |
+| `useLighthouses` | `man_made=lighthouse` | `lighthouses_jp_v3` | node のみ | オレンジ `#f97316` |
+| `useCastles` | `historic=castle` | `castles_jp_v3` | node / way / relation | 青 `#3b82f6` |
+| `useDams` | `waterway=dam` | `dams_jp_v3` | node / way / relation | 緑 `#10b981` |
 
 - キャッシュは `localStorage` に7日間保持する（キャッシュキーにはバージョンサフィックスを付ける。クエリやフィルタを変更したらサフィックスを上げて旧キャッシュを無効化する）
 - ラベルは `name:ja` → `name` → デフォルト名の優先順で決定する
 - way / relation は `out center` で中心座標を取得する（座標が得られない要素は除外）
 - **名称フィルタ**: デフォルト名（"灯台"/"城"/"ダム"）と一致する要素は除外する（`useOsmPoints.ts` のフィルタで処理）
-- **地理フィルタ**: `area["ISO3166-1"="JP"]["admin_level"="2"]` を Overpass クエリに含めることで日本の行政境界内に限定し、韓国・北朝鮮・ロシアのデータを除外する
+- **地理フィルタ**: `(24,122,46,154)` のバウンディングボックスで日本周辺に絞る。`area["ISO3166-1"="JP"]` による行政境界フィルタは Overpass サーバー側の処理が30〜90秒かかるため使用しない
 - 新しい種別を追加するには `useOsmPoints` にクエリとキャッシュキーを渡すラッパーを作るだけでよい
 
 `MapView.vue` では `Promise.all` で全データを並列フェッチし、`VectorLayer` をレイヤーごとに独立して管理する。右上のチェックボックスの変更は `watch` → `layer.setVisible()` で即時反映する。
