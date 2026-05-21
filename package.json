@@ -5,7 +5,7 @@
 	"scripts": {
 		"build": "nuxt build",
 		"dev": "nuxt dev",
-		"fetch": "node scripts/fetch-osm.mjs",
+		"fetch-osm": "node scripts/fetch-osm.mjs",
 		"generate": "node scripts/fetch-osm.mjs && nuxt generate",
 		"preview": "nuxt preview",
 		"postinstall": "nuxt prepare",

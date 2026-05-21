@@ -23,19 +23,29 @@ const visibleLayers = reactive({
 	dams: true,
 });
 
+// 灯台
 const {
 	lighthouses,
 	loading: loadingLighthouses,
 	error: errorLighthouses,
 	fetchLighthouses,
 } = useLighthouses();
+
+// 城
 const {
 	castles,
 	loading: loadingCastles,
 	error: errorCastles,
 	fetchCastles,
 } = useCastles();
-const { dams, loading: loadingDams, error: errorDams, fetchDams } = useDams();
+
+// ダム
+const { 
+  dams, 
+  loading: loadingDams, 
+  error: errorDams, 
+  fetchDams 
+} = useDams();
 
 // biome-ignore lint/correctness/noUnusedVariables: used in <template>
 const isLoading = computed(

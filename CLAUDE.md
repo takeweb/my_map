@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-pnpm fetch        # OSMデータをビルド時取得（public/data/*.json を生成）
-pnpm dev          # 開発サーバー起動（事前に pnpm fetch が必要）
+pnpm fetch-osm    # OSMデータをビルド時取得（public/data/*.json を生成）
+pnpm dev          # 開発サーバー起動（事前に pnpm fetch-osm が必要）
 pnpm build        # サーバーレンダリングビルド（通常は未使用）
 pnpm generate     # OSMデータ取得 → スタティックサイト生成（Vercelデプロイ用）
 pnpm preview      # generateしたビルドをプレビュー

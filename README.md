@@ -1,75 +1,56 @@
-# Nuxt Minimal Starter
+# my-map
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+日本の灯台・城・ダムをOpenStreetMapデータで地図上に表示するSPAです。
 
-## Setup
+## 技術スタック
 
-Make sure to install dependencies:
+- [Nuxt 4](https://nuxt.com/) (ssr: false)
+- [OpenLayers](https://openlayers.org/) — 地図レンダリング
+- [TailwindCSS v4](https://tailwindcss.com/)
+- [Vitest](https://vitest.dev/) — テスト
+- [Biome](https://biomejs.dev/) — Lint / Format
+- [Vercel](https://vercel.com/) — デプロイ
+
+## セットアップ
 
 ```bash
-# npm
-npm install
-
-# pnpm
 pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
+## 開発
 
-Start the development server on `http://localhost:3000`:
+OSMデータをビルド時に取得してから開発サーバーを起動します。
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+pnpm fetch-osm   # public/data/*.json を生成
+pnpm dev         # http://localhost:3000
 ```
 
-## Production
-
-Build the application for production:
+## コマンド一覧
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+pnpm fetch-osm    # OSMデータ取得（public/data/*.json を生成）
+pnpm dev          # 開発サーバー起動
+pnpm generate     # OSMデータ取得 → スタティックサイト生成
+pnpm preview      # generate したビルドをプレビュー
+pnpm lint         # Biome で lint・フォーマットチェック
+pnpm lint:fix     # Biome で自動修正
+pnpm test         # Vitest を watch モードで起動
+pnpm test:run     # Vitest を1回だけ実行（CI用）
 ```
 
-Locally preview production build:
+## データについて
 
-```bash
-# npm
-npm run preview
+`pnpm fetch`（または `pnpm generate`）実行時に [Overpass API](https://overpass-api.de/) から日本国内のデータを取得し、`public/data/` に保存します。
 
-# pnpm
-pnpm preview
+| ファイル | OSMタグ |
+|---|---|
+| `lighthouses.json` | `man_made=lighthouse` |
+| `castles.json` | `historic=castle` |
+| `dams.json` | `waterway=dam` |
 
-# yarn
-yarn preview
+`public/data/` は `.gitignore` 対象のため、クローン後は必ず `pnpm fetch-osm` を実行してください。
 
-# bun
-bun run preview
-```
+## デプロイ
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Vercel にプッシュすると `pnpm generate` が自動実行され、スタティックサイトとして配信されます。
