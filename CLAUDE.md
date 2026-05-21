@@ -51,9 +51,13 @@ TailwindCSS v4を使用。`@tailwindcss/vite` プラグインを `nuxt.config.ts
 
 テストファイルは `tests/` ディレクトリに配置する。`vitest.config.ts` で `environment: "nuxt"` を指定しており、`mountSuspended`（`@nuxt/test-utils/runtime`）を使ってNuxtコンテキスト付きでコンポーネントをマウントできる。
 
+### Overpass API プロキシ
+
+`overpass-api.de` は本番オリジンからの直接リクエストを CORS で拒否するため、`server/api/overpass.post.ts` にサーバーサイドプロキシを設けている。クライアントは `/api/overpass` に POST し、サーバーが Overpass へ中継する（サーバーサイド fetch に CORS 制限はない）。`useOsmPoints.ts` のリクエスト先は `/api/overpass` で固定。
+
 ### デプロイ
 
-`vercel.json` で `pnpm generate` をビルドコマンドとして指定しており、`.output/public` をスタティックファイルとしてVercelに配信する。
+`vercel.json` で `pnpm build` をビルドコマンドとして指定。`nuxt build` が Nitro サーバーを生成し、Vercel がページを SPA として、`server/api/` を Serverless Function として配置する。`pnpm generate`（静的生成）は server route が使えないため不可。
 
 ## Coding Conventions
 

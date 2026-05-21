@@ -45,7 +45,7 @@ export function useOsmPoints({ cacheKey, query, defaultName }: Options) {
 		error.value = null;
 
 		try {
-			const res = await fetch("https://overpass-api.de/api/interpreter", {
+			const res = await fetch("/api/overpass", {
 				method: "POST",
 				body: query,
 			});
