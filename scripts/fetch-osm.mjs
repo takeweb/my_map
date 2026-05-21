@@ -23,6 +23,9 @@ area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
   node["historic"="castle"](area.japan);
   way["historic"="castle"](area.japan);
   relation["historic"="castle"](area.japan);
+  node["historic"="ruins"]["ruins"="castle"](area.japan);
+  way["historic"="ruins"]["ruins"="castle"](area.japan);
+  relation["historic"="ruins"]["ruins"="castle"](area.japan);
 );
 out center;`,
 	},
