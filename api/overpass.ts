@@ -1,4 +1,4 @@
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 60, api: { bodyParser: false } };
 
 // biome-ignore lint/suspicious/noExplicitAny: Vercel Node.js handler signature
 export default async function handler(req: any, res: any) {
