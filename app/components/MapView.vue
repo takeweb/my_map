@@ -176,10 +176,11 @@ function doSearch() {
 
 	searchCoords.value = results;
 	hasSearched.value = true;
-	updateSearchPixels();
 
 	if (results.length > 0) {
-		map?.getView().animate({ center: results[0].coord, duration: 500 });
+		map?.getView().animate({ center: results[0].coord, duration: 500 }, updateSearchPixels);
+	} else {
+		updateSearchPixels();
 	}
 }
 
@@ -229,7 +230,7 @@ onMounted(async () => {
 		}),
 	});
 
-	map.on("postrender", updateSearchPixels);
+	map.on("moveend", updateSearchPixels);
 
 	map.on("click", (e) => {
 		const feature = map?.forEachFeatureAtPixel(e.pixel, (f) => f);
