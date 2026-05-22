@@ -29,6 +29,42 @@ const visibleLayers = reactive({
 	dams: true,
 });
 
+const REGION_GROUPS = [
+	{ label: "北海道", codes: ["JP-01"] },
+	{
+		label: "東北",
+		codes: ["JP-02", "JP-03", "JP-04", "JP-05", "JP-06", "JP-07"],
+	},
+	{
+		label: "関東",
+		codes: ["JP-08", "JP-09", "JP-10", "JP-11", "JP-12", "JP-13", "JP-14"],
+	},
+	{
+		label: "北陸・甲信越",
+		codes: ["JP-15", "JP-16", "JP-17", "JP-18", "JP-19", "JP-20"],
+	},
+	{ label: "東海", codes: ["JP-21", "JP-22", "JP-23", "JP-24"] },
+	{
+		label: "近畿",
+		codes: ["JP-25", "JP-26", "JP-27", "JP-28", "JP-29", "JP-30"],
+	},
+	{ label: "中国", codes: ["JP-31", "JP-32", "JP-33", "JP-34", "JP-35"] },
+	{ label: "四国", codes: ["JP-36", "JP-37", "JP-38", "JP-39"] },
+	{
+		label: "九州・沖縄",
+		codes: [
+			"JP-40",
+			"JP-41",
+			"JP-42",
+			"JP-43",
+			"JP-44",
+			"JP-45",
+			"JP-46",
+			"JP-47",
+		],
+	},
+];
+
 const visiblePrefCodes = ref<string[]>([]);
 // biome-ignore lint/correctness/noUnusedVariables: used in <template>
 const prefectureList = computed(() =>
@@ -39,6 +75,33 @@ const prefectureList = computed(() =>
 		}))
 		.sort((a, b) => a.code.localeCompare(b.code)),
 );
+// biome-ignore lint/correctness/noUnusedVariables: used in <template>
+const groupedPrefectures = computed(() => {
+	const prefMap = new Map(prefectureList.value.map((p) => [p.code, p]));
+	return REGION_GROUPS.map(({ label, codes }) => ({
+		label,
+		codes,
+		prefectures: codes
+			.map((c) => prefMap.get(c))
+			.filter((p) => p !== undefined),
+	})).filter((g) => g.prefectures.length > 0);
+});
+
+function regionAllVisible(codes: string[]) {
+	return (
+		codes.length > 0 && codes.every((c) => visiblePrefCodes.value.includes(c))
+	);
+}
+function toggleRegion(codes: string[], checked: boolean) {
+	if (checked) {
+		const toAdd = codes.filter((c) => !visiblePrefCodes.value.includes(c));
+		visiblePrefCodes.value = [...visiblePrefCodes.value, ...toAdd];
+	} else {
+		visiblePrefCodes.value = visiblePrefCodes.value.filter(
+			(c) => !codes.includes(c),
+		);
+	}
+}
 
 // 都道府県
 const {
@@ -433,24 +496,40 @@ onUnmounted(() => {
             @click="visiblePrefCodes = []"
           >全解除</button>
         </div>
-        <div class="mt-1 max-h-40 overflow-y-auto flex flex-col gap-0.5">
-          <label
-            v-for="pref in prefectureList"
-            :key="pref.code"
-            class="flex cursor-pointer items-center gap-1.5 text-xs"
-          >
-            <input
-              :checked="visiblePrefCodes.includes(pref.code)"
-              class="accent-indigo-500"
-              type="checkbox"
-              @change="(e) => {
-                const checked = (e.target as HTMLInputElement).checked;
-                if (checked) { if (!visiblePrefCodes.includes(pref.code)) visiblePrefCodes.push(pref.code); }
-                else { visiblePrefCodes = visiblePrefCodes.filter((c) => c !== pref.code); }
-              }"
-            />
-            {{ pref.name }}
-          </label>
+        <div class="mt-1 max-h-52 overflow-y-auto flex flex-col gap-0.5">
+          <template v-for="group in groupedPrefectures" :key="group.label">
+            <!-- 地域ヘッダー -->
+            <label class="mt-1 flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-gray-600">
+              <input
+                :checked="regionAllVisible(group.codes)"
+                class="accent-indigo-500"
+                type="checkbox"
+                @change="(e) => toggleRegion(group.codes, (e.target as HTMLInputElement).checked)"
+              />
+              {{ group.label }}
+              <span class="font-normal text-gray-400">
+                ({{ group.prefectures.filter((p) => visiblePrefCodes.includes(p.code)).length }}/{{ group.prefectures.length }})
+              </span>
+            </label>
+            <!-- 都道府県 -->
+            <label
+              v-for="pref in group.prefectures"
+              :key="pref.code"
+              class="flex cursor-pointer items-center gap-1.5 pl-4 text-xs"
+            >
+              <input
+                :checked="visiblePrefCodes.includes(pref.code)"
+                class="accent-indigo-500"
+                type="checkbox"
+                @change="(e) => {
+                  const checked = (e.target as HTMLInputElement).checked;
+                  if (checked) { if (!visiblePrefCodes.includes(pref.code)) visiblePrefCodes.push(pref.code); }
+                  else { visiblePrefCodes = visiblePrefCodes.filter((c) => c !== pref.code); }
+                }"
+              />
+              {{ pref.name }}
+            </label>
+          </template>
         </div>
       </details>
 
