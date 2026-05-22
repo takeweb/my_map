@@ -39,7 +39,7 @@ describe("useDams", () => {
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"dams_jp_v8",
+			"dams_jp_v9",
 			JSON.stringify({
 				data: mockGeojson("キャッシュダム"),
 				timestamp: Date.now(),

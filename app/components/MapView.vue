@@ -83,15 +83,17 @@ const groupedPrefectures = computed(() => {
 		codes,
 		prefectures: codes
 			.map((c) => prefMap.get(c))
-			.filter((p) => p !== undefined),
+			.filter((p): p is { name: string; code: string } => p !== undefined),
 	})).filter((g) => g.prefectures.length > 0);
 });
 
+// biome-ignore lint/correctness/noUnusedVariables: used in <template>
 function regionAllVisible(codes: string[]) {
 	return (
 		codes.length > 0 && codes.every((c) => visiblePrefCodes.value.includes(c))
 	);
 }
+// biome-ignore lint/correctness/noUnusedVariables: used in <template>
 function toggleRegion(codes: string[], checked: boolean) {
 	if (checked) {
 		const toAdd = codes.filter((c) => !visiblePrefCodes.value.includes(c));
@@ -350,10 +352,11 @@ function doSearch() {
 	searchCoords.value = results;
 	hasSearched.value = true;
 
-	if (results.length > 0) {
+	const first = results[0];
+	if (first) {
 		map
 			?.getView()
-			.animate({ center: results[0].coord, duration: 500 }, updateSearchPixels);
+			.animate({ center: first.coord, duration: 500 }, updateSearchPixels);
 	} else {
 		updateSearchPixels();
 	}

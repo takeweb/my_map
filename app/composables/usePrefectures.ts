@@ -1,5 +1,16 @@
+export interface PrefectureFeature {
+	type: "Feature";
+	geometry: { type: string; coordinates: unknown };
+	properties: { id: string; name: string; code: string };
+}
+
+export interface PrefectureCollection {
+	type: "FeatureCollection";
+	features: PrefectureFeature[];
+}
+
 export function usePrefectures() {
-	const geojson = ref<Record<string, unknown> | null>(null);
+	const geojson = ref<PrefectureCollection | null>(null);
 	const loading = ref(false);
 	const error = ref<string | null>(null);
 

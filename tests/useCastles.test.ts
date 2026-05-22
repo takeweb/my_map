@@ -39,7 +39,7 @@ describe("useCastles", () => {
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"castles_jp_v9",
+			"castles_jp_v10",
 			JSON.stringify({
 				data: mockGeojson("キャッシュ城"),
 				timestamp: Date.now(),

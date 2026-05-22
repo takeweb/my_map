@@ -3,7 +3,7 @@ export interface OsmFeatureCollection {
 	features: Array<{
 		type: "Feature";
 		geometry: { type: string; coordinates: number[] };
-		properties: { id: number; name: string };
+		properties: { id: number; name: string; prefecture_code: string | null };
 	}>;
 }
 
