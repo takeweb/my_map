@@ -74,6 +74,7 @@ for (const { file, defaultName, query } of FEATURES) {
 	if (!res.ok) throw new Error(`HTTP ${res.status} for ${file}`);
 
 	const { elements } = await res.json();
+	const seen = new Set();
 	const features = elements
 		.map((el) => {
 			const lat = el.lat ?? el.center?.lat;
@@ -81,6 +82,9 @@ for (const { file, defaultName, query } of FEATURES) {
 			if (lat == null || lon == null) return null;
 			const name = el.tags?.["name:ja"] ?? el.tags?.name ?? defaultName;
 			if (name === defaultName) return null;
+			const key = `${name}:${Math.round(lat * 100)}:${Math.round(lon * 100)}`;
+			if (seen.has(key)) return null;
+			seen.add(key);
 			return {
 				type: "Feature",
 				geometry: { type: "Point", coordinates: [lon, lat] },

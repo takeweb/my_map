@@ -1,6 +1,6 @@
 # my-map
 
-日本の灯台・城・ダムをOpenStreetMapデータで地図上に表示するSPAです。
+日本の灯台・城・ダムをOpenStreetMapデータで地図上に表示するSPAです。名称で検索してポイントをハイライト表示できます。
 
 ## 技術スタック
 
@@ -19,8 +19,6 @@ pnpm install
 
 ## 開発
 
-OSMデータをビルド時に取得してから開発サーバーを起動します。
-
 ```bash
 pnpm dev:fetch   # OSMデータ取得 → http://localhost:3000（初回・データ更新時）
 pnpm dev         # http://localhost:3000（データ取得済みの場合）
@@ -29,8 +27,9 @@ pnpm dev         # http://localhost:3000（データ取得済みの場合）
 ## コマンド一覧
 
 ```bash
-pnpm fetch-osm    # OSMデータ取得（public/data/*.json を生成）
 pnpm dev          # 開発サーバー起動
+pnpm dev:fetch    # OSMデータ取得 → 開発サーバー起動
+pnpm fetch-osm    # OSMデータ取得のみ（public/data/*.geojson を生成）
 pnpm generate     # OSMデータ取得 → スタティックサイト生成
 pnpm preview      # generate したビルドをプレビュー
 pnpm lint         # Biome で lint・フォーマットチェック
@@ -41,15 +40,15 @@ pnpm test:run     # Vitest を1回だけ実行（CI用）
 
 ## データについて
 
-`pnpm fetch`（または `pnpm generate`）実行時に [Overpass API](https://overpass-api.de/) から日本国内のデータを取得し、`public/data/` に保存します。
+`pnpm fetch-osm`（または `pnpm generate`）実行時に [Overpass API](https://overpass-api.de/) から日本国内のデータを取得し、`public/data/` にGeoJSON形式で保存します。
 
 | ファイル | OSMタグ |
 |---|---|
-| `lighthouses.json` | `man_made=lighthouse` |
-| `castles.json` | `historic=castle` |
-| `dams.json` | `waterway=dam` |
+| `lighthouses.geojson` | `man_made=lighthouse` |
+| `castles.geojson` | `historic=castle`、`historic=ruins` + `ruins=castle` |
+| `dams.geojson` | `waterway=dam` |
 
-`public/data/` は `.gitignore` 対象のため、クローン後は必ず `pnpm fetch-osm` を実行してください。
+`public/data/` は `.gitignore` 対象のため、クローン後は必ず `pnpm dev:fetch` または `pnpm fetch-osm` を実行してください。
 
 ## デプロイ
 

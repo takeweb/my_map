@@ -20,6 +20,7 @@ const popupPos = ref<[number, number] | null>(null);
 const searchQuery = ref("");
 const searchCoords = ref<Array<{ name: string; coord: number[] }>>([]);
 const searchPopups = ref<Array<{ name: string; pixel: [number, number] }>>([]);
+const hasSearched = ref(false);
 
 const visibleLayers = reactive({
 	lighthouses: true,
@@ -65,6 +66,10 @@ const lighthouseSource = new VectorSource();
 const castleSource = new VectorSource();
 const damSource = new VectorSource();
 
+const lighthouseCount = ref(0);
+const castleCount = ref(0);
+const damCount = ref(0);
+
 function makeStyle(color: string) {
 	return new Style({
 		image: new CircleStyle({
@@ -85,6 +90,7 @@ watch(lighthouses, (data) => {
 		lighthouseSource.addFeatures(
 			geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }),
 		);
+		lighthouseCount.value = data.features.length;
 	}
 });
 watch(castles, (data) => {
@@ -93,6 +99,7 @@ watch(castles, (data) => {
 		castleSource.addFeatures(
 			geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }),
 		);
+		castleCount.value = data.features.length;
 	}
 });
 watch(dams, (data) => {
@@ -101,6 +108,7 @@ watch(dams, (data) => {
 		damSource.addFeatures(
 			geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }),
 		);
+		damCount.value = data.features.length;
 	}
 });
 
@@ -111,15 +119,15 @@ let map: OlMap | null = null;
 
 watch(
 	() => visibleLayers.lighthouses,
-	(v) => lighthouseLayer?.setVisible(v),
+	(v) => { lighthouseLayer?.setVisible(v); if (hasSearched.value) doSearch(); },
 );
 watch(
 	() => visibleLayers.castles,
-	(v) => castleLayer?.setVisible(v),
+	(v) => { castleLayer?.setVisible(v); if (hasSearched.value) doSearch(); },
 );
 watch(
 	() => visibleLayers.dams,
-	(v) => damLayer?.setVisible(v),
+	(v) => { damLayer?.setVisible(v); if (hasSearched.value) doSearch(); },
 );
 
 function updateSearchPixels() {
@@ -137,17 +145,33 @@ function doSearch() {
 	if (!q) return;
 
 	const results: Array<{ name: string; coord: number[] }> = [];
-	for (const source of [lighthouseSource, castleSource, damSource]) {
+	const targets = [
+		{ source: lighthouseSource, data: lighthouses.value, visible: visibleLayers.lighthouses, count: lighthouseCount },
+		{ source: castleSource, data: castles.value, visible: visibleLayers.castles, count: castleCount },
+		{ source: damSource, data: dams.value, visible: visibleLayers.dams, count: damCount },
+	];
+
+	for (const { source, data, visible, count } of targets) {
+		source.clear();
+		count.value = 0;
+		if (!visible || !data) continue;
+		const matched = data.features.filter((f) => f.properties.name?.includes(q));
+		if (matched.length === 0) continue;
+		source.addFeatures(
+			geoJsonFormat.readFeatures(
+				{ ...data, features: matched },
+				{ featureProjection: "EPSG:3857" },
+			),
+		);
+		count.value = matched.length;
 		for (const feature of source.getFeatures()) {
-			const name = feature.get("name") as string;
-			if (name?.includes(q)) {
-				const geom = feature.getGeometry() as Point;
-				results.push({ name, coord: geom.getCoordinates() });
-			}
+			const geom = feature.getGeometry() as Point;
+			results.push({ name: feature.get("name") as string, coord: geom.getCoordinates() });
 		}
 	}
 
 	searchCoords.value = results;
+	hasSearched.value = true;
 	updateSearchPixels();
 
 	if (results.length > 0) {
@@ -157,9 +181,22 @@ function doSearch() {
 
 // biome-ignore lint/correctness/noUnusedVariables: used in <template>
 function clearAll() {
+	const restores = [
+		{ source: lighthouseSource, data: lighthouses.value, count: lighthouseCount },
+		{ source: castleSource, data: castles.value, count: castleCount },
+		{ source: damSource, data: dams.value, count: damCount },
+	];
+	for (const { source, data, count } of restores) {
+		source.clear();
+		if (data) {
+			source.addFeatures(geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }));
+			count.value = data.features.length;
+		}
+	}
 	searchQuery.value = "";
 	searchCoords.value = [];
 	searchPopups.value = [];
+	hasSearched.value = false;
 	popupName.value = null;
 	popupPos.value = null;
 }
@@ -265,24 +302,26 @@ onUnmounted(() => {
 
     <!-- レイヤー切り替え -->
     <div class="absolute right-4 top-4 rounded-lg bg-white/90 p-3 shadow-md">
-      <p class="mb-2 text-xs font-bold text-gray-700">レイヤー</p>
+      <p class="mb-2 text-xs font-bold text-gray-700">
+        レイヤー<span v-if="hasSearched">（{{ searchCoords.length }}件）</span>
+      </p>
       <label class="flex cursor-pointer items-center gap-2 text-sm">
         <input v-model="visibleLayers.lighthouses" class="accent-orange-500" type="checkbox" />
         <span class="size-3 rounded-full bg-orange-500" />
         灯台
-        <span class="text-xs text-gray-400">({{ lighthouses?.features.length ?? 0 }})</span>
+        <span class="text-xs text-gray-400">({{ lighthouseCount }})</span>
       </label>
       <label class="mt-1.5 flex cursor-pointer items-center gap-2 text-sm">
         <input v-model="visibleLayers.castles" class="accent-blue-500" type="checkbox" />
         <span class="size-3 rounded-full bg-blue-500" />
         城
-        <span class="text-xs text-gray-400">({{ castles?.features.length ?? 0 }})</span>
+        <span class="text-xs text-gray-400">({{ castleCount }})</span>
       </label>
       <label class="mt-1.5 flex cursor-pointer items-center gap-2 text-sm">
         <input v-model="visibleLayers.dams" class="accent-emerald-500" type="checkbox" />
         <span class="size-3 rounded-full bg-emerald-500" />
         ダム
-        <span class="text-xs text-gray-400">({{ dams?.features.length ?? 0 }})</span>
+        <span class="text-xs text-gray-400">({{ damCount }})</span>
       </label>
     </div>
 
