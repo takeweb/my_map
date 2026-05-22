@@ -29,6 +29,7 @@
 		"@tailwindcss/vite": "^4.3.0",
 		"@vue/test-utils": "^2.4.10",
 		"happy-dom": "^20.9.0",
+		"osmtogeojson": "3.0.0-beta.5",
 		"tailwindcss": "^4.3.0",
 		"vitest": "^4.1.7"
 	}

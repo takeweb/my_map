@@ -34,9 +34,9 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 
 | コンポーザブル | OSMタグ | データファイル | キャッシュキー | 色 |
 |---|---|---|---|---|
-| `useLighthouses` | `man_made=lighthouse` | `/data/lighthouses.geojson` | `lighthouses_jp_v8` | オレンジ `#f97316` |
-| `useCastles` | `historic=castle` | `/data/castles.geojson` | `castles_jp_v8` | 青 `#3b82f6` |
-| `useDams` | `waterway=dam` | `/data/dams.geojson` | `dams_jp_v8` | 緑 `#10b981` |
+| `useLighthouses` | `man_made=lighthouse` | `/data/lighthouses.geojson` | `lighthouses_jp_v9` | オレンジ `#f97316` |
+| `useCastles` | `historic=castle` | `/data/castles.geojson` | `castles_jp_v10` | 青 `#3b82f6` |
+| `useDams` | `waterway=dam` | `/data/dams.geojson` | `dams_jp_v9` | 緑 `#10b981` |
 
 - キャッシュは `localStorage` に7日間保持する（キャッシュキーにはバージョンサフィックスを付ける。データ形式やフィルタを変更したらサフィックスを上げて旧キャッシュを無効化する）
 - **地理フィルタ**: `scripts/fetch-osm.mjs` が `area["ISO3166-1"="JP"]["admin_level"="2"]` で日本の行政境界内に絞る。ビルド時実行なのでタイムアウト制約なし（120秒設定）
@@ -44,7 +44,7 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 - `public/data/` はGit管理対象。ローカルで `pnpm fetch-osm` を実行してコミット・プッシュする
 - 新しい種別を追加するには `scripts/fetch-osm.mjs` に FEATURES エントリを追加し、`useOsmPoints` ラッパーを作るだけでよい
 
-`MapView.vue` では `Promise.all` で全データを並列フェッチし、`VectorLayer` をレイヤーごとに独立して管理する。右上のチェックボックスの変更は `watch` → `layer.setVisible()` で即時反映する。
+`MapView.vue` では `Promise.all` で全データを並列フェッチし、`VectorLayer` をレイヤーごとに独立して管理する。右上のチェックボックスの変更は `watch` → `layer.setVisible()` で即時反映する。ポイントレイヤーのスタイルは関数形式で、`feature.get("prefecture_code")` が `visiblePrefCodes` に含まれない場合は `[]` を返して非表示にする。都道府県トグル変更時は `lighthouseSource.changed()` / `castleSource.changed()` / `damSource.changed()` を呼んで再描画する。
 
 ### スタイリング
 

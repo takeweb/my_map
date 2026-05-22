@@ -53,7 +53,9 @@ describe("useLighthouses", () => {
 		await fetchLighthouses();
 
 		expect(fetchMock).not.toHaveBeenCalled();
-		expect(lighthouses.value?.features[0].properties.name).toBe("キャッシュ灯台");
+		expect(lighthouses.value?.features[0].properties.name).toBe(
+			"キャッシュ灯台",
+		);
 	});
 
 	it("sets error state when data file fetch fails", async () => {
