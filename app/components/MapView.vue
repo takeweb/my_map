@@ -260,7 +260,13 @@ function doSearch() {
 		source.clear();
 		count.value = 0;
 		if (!visible || !data) continue;
-		const matched = data.features.filter((f) => f.properties.name?.includes(q));
+		const matched = data.features.filter((f) => {
+			const code = f.properties.prefecture_code as string | null;
+			return (
+				f.properties.name?.includes(q) &&
+				(!code || visiblePrefCodes.value.includes(code))
+			);
+		});
 		if (matched.length === 0) continue;
 		source.addFeatures(
 			geoJsonFormat.readFeatures(
@@ -307,7 +313,7 @@ function clearAll() {
 			source.addFeatures(
 				geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }),
 			);
-			count.value = data.features.length;
+			count.value = countVisible(source);
 		}
 	}
 	searchQuery.value = "";
