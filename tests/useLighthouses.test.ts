@@ -39,7 +39,7 @@ describe("useLighthouses", () => {
 
 	it("uses cached data when cache is fresh", async () => {
 		localStorage.setItem(
-			"lighthouses_jp_v9",
+			"lighthouses_jp_v10",
 			JSON.stringify({
 				data: mockGeojson("キャッシュ灯台"),
 				timestamp: Date.now(),

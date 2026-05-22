@@ -34,7 +34,7 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 
 | コンポーザブル | OSMタグ | データファイル | キャッシュキー | 色 |
 |---|---|---|---|---|
-| `useLighthouses` | `man_made=lighthouse` | `/data/lighthouses.geojson` | `lighthouses_jp_v9` | オレンジ `#f97316` |
+| `useLighthouses` | `man_made=lighthouse` | `/data/lighthouses.geojson` | `lighthouses_jp_v10` | オレンジ `#f97316` |
 | `useCastles` | `historic=castle` | `/data/castles.geojson` | `castles_jp_v10` | 青 `#3b82f6` |
 | `useDams` | `waterway=dam` | `/data/dams.geojson` | `dams_jp_v9` | 緑 `#10b981` |
 

@@ -5,7 +5,7 @@ export function useLighthouses() {
 		error,
 		fetchPoints: fetchLighthouses,
 	} = useOsmPoints({
-		cacheKey: "lighthouses_jp_v9",
+		cacheKey: "lighthouses_jp_v10",
 		dataUrl: "/data/lighthouses.geojson",
 		defaultName: "灯台",
 	});

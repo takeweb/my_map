@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import osmtogeojson from "osmtogeojson";
@@ -19,8 +19,11 @@ out geom;`,
 		defaultName: "灯台",
 		query: `[out:json][timeout:120];
 area["ISO3166-1"="JP"]["admin_level"="2"]->.japan;
-node["man_made"="lighthouse"](area.japan);
-out body;`,
+(
+  node["man_made"="lighthouse"](area.japan);
+  way["man_made"="lighthouse"](area.japan);
+);
+out center;`,
 	},
 	{
 		file: "castles",
@@ -100,9 +103,27 @@ async function fetchWithRetry(query, file, retries = 3) {
 	}
 }
 
+const args = process.argv.slice(2);
+const targets =
+	args.length > 0 ? FEATURES.filter((f) => args.includes(f.file)) : FEATURES;
+
+if (args.length > 0 && targets.length === 0) {
+	console.error(
+		`Unknown feature(s): ${args.join(", ")}. Available: ${FEATURES.map((f) => f.file).join(", ")}`,
+	);
+	process.exit(1);
+}
+
 let prefectureFeatures = [];
 
-for (const { file, kind = "point", defaultName, query } of FEATURES) {
+// 都道府県を取得しない場合は既存ファイルをポイントインポリゴン用に読み込む
+const prefFile = join(ROOT, "public", "data", "prefectures.geojson");
+if (!targets.some((t) => t.file === "prefectures") && existsSync(prefFile)) {
+	prefectureFeatures = JSON.parse(readFileSync(prefFile, "utf-8")).features;
+	console.log(`Using existing prefectures (${prefectureFeatures.length} features)`);
+}
+
+for (const { file, kind = "point", defaultName, query } of targets) {
 	process.stdout.write(`Fetching ${file}... `);
 
 	const res = await fetchWithRetry(query, file);
