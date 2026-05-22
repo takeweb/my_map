@@ -9,7 +9,7 @@ pnpm fetch-osm    # OSMデータをビルド時取得（public/data/*.json を�
 pnpm dev          # 開発サーバー起動（データ取得済みの場合）
 pnpm dev:fetch    # OSMデータ取得 → 開発サーバー起動
 pnpm build        # サーバーレンダリングビルド（通常は未使用）
-pnpm generate     # OSMデータ取得 → スタティックサイト生成（Vercelデプロイ用）
+pnpm generate     # OSMデータ取得 → スタティックサイト生成（ローカル確認用）
 pnpm preview      # generateしたビルドをプレビュー
 pnpm lint         # Biomeでlint・フォーマットチェック
 pnpm lint:fix     # Biomeで自動修正
@@ -41,7 +41,7 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 - キャッシュは `localStorage` に7日間保持する（キャッシュキーにはバージョンサフィックスを付ける。データ形式やフィルタを変更したらサフィックスを上げて旧キャッシュを無効化する）
 - **地理フィルタ**: `scripts/fetch-osm.mjs` が `area["ISO3166-1"="JP"]["admin_level"="2"]` で日本の行政境界内に絞る。ビルド時実行なのでタイムアウト制約なし（120秒設定）
 - **名称フィルタ**: デフォルト名（"灯台"/"城"/"ダム"）と一致する要素をスクリプト側で除外する
-- `public/data/` は `.gitignore` 対象（ビルド時に再生成される）
+- `public/data/` はGit管理対象。ローカルで `pnpm fetch-osm` を実行してコミット・プッシュする
 - 新しい種別を追加するには `scripts/fetch-osm.mjs` に FEATURES エントリを追加し、`useOsmPoints` ラッパーを作るだけでよい
 
 `MapView.vue` では `Promise.all` で全データを並列フェッチし、`VectorLayer` をレイヤーごとに独立して管理する。右上のチェックボックスの変更は `watch` → `layer.setVisible()` で即時反映する。

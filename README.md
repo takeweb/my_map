@@ -48,8 +48,8 @@ pnpm test:run     # Vitest を1回だけ実行（CI用）
 | `castles.geojson` | `historic=castle`、`historic=ruins` + `ruins=castle` |
 | `dams.geojson` | `waterway=dam` |
 
-`public/data/` は `.gitignore` 対象のため、クローン後は必ず `pnpm dev:fetch` または `pnpm fetch-osm` を実行してください。
+`public/data/` はGit管理対象です。データを更新する場合はローカルで `pnpm fetch-osm` を実行してコミット・プッシュしてください。
 
 ## デプロイ
 
-Vercel にプッシュすると `pnpm generate` が自動実行され、スタティックサイトとして配信されます。
+Vercel にプッシュすると `nuxt generate` が自動実行され、スタティックサイトとして配信されます。データ取得はローカルで行い、`public/data/` をコミット・プッシュすることでデプロイに反映されます。
