@@ -60,6 +60,10 @@ const isLoading = computed(
 const fetchError = computed(
 	() => errorLighthouses.value ?? errorCastles.value ?? errorDams.value,
 );
+// biome-ignore lint/correctness/noUnusedVariables: used in <template>
+const totalCount = computed(
+	() => lighthouseCount.value + castleCount.value + damCount.value,
+);
 
 const geoJsonFormat = new GeoJSON();
 const lighthouseSource = new VectorSource();
@@ -275,35 +279,10 @@ onUnmounted(() => {
       {{ fetchError }}
     </div>
 
-    <!-- 検索 -->
-    <div class="absolute left-12 top-4 flex gap-2">
-      <input
-        v-model="searchQuery"
-        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow focus:outline-none"
-        placeholder="名称で検索..."
-        type="text"
-        @keyup.enter="doSearch"
-      />
-      <button
-        class="rounded-lg bg-white px-3 py-2 text-sm shadow hover:bg-gray-50"
-        type="button"
-        @click="doSearch"
-      >
-        検索
-      </button>
-      <button
-        class="rounded-lg bg-white px-3 py-2 text-sm shadow hover:bg-gray-50"
-        type="button"
-        @click="clearAll"
-      >
-        クリア
-      </button>
-    </div>
-
-    <!-- レイヤー切り替え -->
+    <!-- レイヤー切り替え＋検索 -->
     <div class="absolute right-4 top-4 rounded-lg bg-white/90 p-3 shadow-md">
       <p class="mb-2 text-xs font-bold text-gray-700">
-        レイヤー<span v-if="hasSearched">（{{ searchCoords.length }}件）</span>
+        レイヤー（{{ hasSearched ? searchCoords.length : totalCount }}）
       </p>
       <label class="flex cursor-pointer items-center gap-2 text-sm">
         <input v-model="visibleLayers.lighthouses" class="accent-orange-500" type="checkbox" />
@@ -323,6 +302,31 @@ onUnmounted(() => {
         ダム
         <span class="text-xs text-gray-400">({{ damCount }})</span>
       </label>
+      <div class="mt-3 flex flex-col gap-1.5">
+        <input
+          v-model="searchQuery"
+          class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none"
+          placeholder="名称で検索..."
+          type="text"
+          @keyup.enter="doSearch"
+        />
+        <div class="flex gap-1.5">
+          <button
+            class="flex-1 rounded bg-gray-100 px-2 py-1.5 text-sm hover:bg-gray-200"
+            type="button"
+            @click="doSearch"
+          >
+            検索
+          </button>
+          <button
+            class="flex-1 rounded bg-gray-100 px-2 py-1.5 text-sm hover:bg-gray-200"
+            type="button"
+            @click="clearAll"
+          >
+            クリア
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- クリックポップアップ -->
