@@ -22,8 +22,8 @@ pnpm install
 OSMデータをビルド時に取得してから開発サーバーを起動します。
 
 ```bash
-pnpm fetch-osm   # public/data/*.json を生成
-pnpm dev         # http://localhost:3000
+pnpm dev:fetch   # OSMデータ取得 → http://localhost:3000（初回・データ更新時）
+pnpm dev         # http://localhost:3000（データ取得済みの場合）
 ```
 
 ## コマンド一覧

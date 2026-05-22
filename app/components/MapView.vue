@@ -239,7 +239,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 検索 -->
-    <div class="absolute left-4 top-4 flex gap-2">
+    <div class="absolute left-12 top-4 flex gap-2">
       <input
         v-model="searchQuery"
         class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow focus:outline-none"
