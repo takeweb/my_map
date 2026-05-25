@@ -120,7 +120,9 @@ let prefectureFeatures = [];
 const prefFile = join(ROOT, "public", "data", "prefectures.geojson");
 if (!targets.some((t) => t.file === "prefectures") && existsSync(prefFile)) {
 	prefectureFeatures = JSON.parse(readFileSync(prefFile, "utf-8")).features;
-	console.log(`Using existing prefectures (${prefectureFeatures.length} features)`);
+	console.log(
+		`Using existing prefectures (${prefectureFeatures.length} features)`,
+	);
 }
 
 for (const { file, kind = "point", defaultName, query } of targets) {

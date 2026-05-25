@@ -13,6 +13,7 @@ import Fill from "ol/style/Fill";
 import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import View from "ol/View";
+import REGION_GROUPS from "~/data/regionGroups.json";
 
 const mapContainer = ref<HTMLDivElement | null>(null);
 const popupName = ref<string | null>(null);
@@ -28,42 +29,6 @@ const visibleLayers = reactive({
 	castles: true,
 	dams: true,
 });
-
-const REGION_GROUPS = [
-	{ label: "北海道", codes: ["JP-01"] },
-	{
-		label: "東北",
-		codes: ["JP-02", "JP-03", "JP-04", "JP-05", "JP-06", "JP-07"],
-	},
-	{
-		label: "関東",
-		codes: ["JP-08", "JP-09", "JP-10", "JP-11", "JP-12", "JP-13", "JP-14"],
-	},
-	{
-		label: "北陸・甲信越",
-		codes: ["JP-15", "JP-16", "JP-17", "JP-18", "JP-19", "JP-20"],
-	},
-	{ label: "東海", codes: ["JP-21", "JP-22", "JP-23", "JP-24"] },
-	{
-		label: "近畿",
-		codes: ["JP-25", "JP-26", "JP-27", "JP-28", "JP-29", "JP-30"],
-	},
-	{ label: "中国", codes: ["JP-31", "JP-32", "JP-33", "JP-34", "JP-35"] },
-	{ label: "四国", codes: ["JP-36", "JP-37", "JP-38", "JP-39"] },
-	{
-		label: "九州・沖縄",
-		codes: [
-			"JP-40",
-			"JP-41",
-			"JP-42",
-			"JP-43",
-			"JP-44",
-			"JP-45",
-			"JP-46",
-			"JP-47",
-		],
-	},
-];
 
 const visiblePrefCodes = ref<string[]>([]);
 // biome-ignore lint/correctness/noUnusedVariables: used in <template>
