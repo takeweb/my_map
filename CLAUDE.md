@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm fetch-osm    # OSMデータをビルド時取得（public/data/*.json を生成）
-pnpm fetch-us-states  # アメリカ合衆国の州境界を取得（public/data/us-states.geojson を生成）
+pnpm fetch-states # アメリカ合衆国・カナダの州境界を取得（public/data/us-states.geojson・canada-provinces.geojson を生成）
 pnpm dev          # 開発サーバー起動（データ取得済みの場合）
 pnpm dev:fetch    # OSMデータ取得 → 開発サーバー起動
 pnpm build        # サーバーレンダリングビルド（通常は未使用）
@@ -56,7 +56,7 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 - アイコンは、リーグ色のピンの中に球団ロゴを入れた SVG を data URI にした `ol/style/Icon`。ロゴ SVG は `fetch` で取得してピンの SVG に埋め込む（画像として読み込む SVG は外部 URL を参照できないため）。取得前・失敗時は野球のダイヤモンドのピンを表示する
 - 表示フィルタはスタイル関数で `[]` を返して非表示にし、切り替え時に `source.changed()` と `view.fit()` を呼ぶ
 - ポップアップは `ol/Overlay` で球場座標に固定する（地図を動かしても追従する）
-- 州境界レイヤーは `useUsStates` で `/data/us-states.geojson` を読み込む。データは `scripts/fetch-us-states.mjs` が Natural Earth（1:50m、パブリックドメイン）から生成する。OSM の行政境界は米国全体だと巨大になるため使っていない。州境界は変化しないため `pnpm generate` には含めない
+- 州境界レイヤーはアメリカ合衆国（藍色、`useUsStates` → `/data/us-states.geojson`）とカナダ（薄紅 `#f0908d`、`useCanadaProvinces` → `/data/canada-provinces.geojson`）の2つ。どちらも共通実装 `useAdminAreas` の薄いラッパーで、コンポーネント側も `createBoundaryLayer` で同じ作りにしている。データは `scripts/fetch-states.mjs` が Natural Earth（1:50m、パブリックドメイン）から生成する。OSM の行政境界は米国全体だと巨大になるため使っていない。州境界は変化しないため `pnpm generate` には含めない
 - クリックは `layerFilter` で球場レイヤーだけを対象にする（州のポリゴンでポップアップが開かないように）
 - 州にマウスを乗せると、州名（日本語・英語）のツールチップを出し、その州を濃い色で表示する。球場ピンの上では州名を出さない
 

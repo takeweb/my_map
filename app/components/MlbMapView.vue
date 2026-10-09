@@ -16,6 +16,8 @@ import Icon from "ol/style/Icon";
 import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import View from "ol/View";
+import type { Ref } from "vue";
+import type { AdminAreaCollection } from "~/composables/useAdminAreas";
 import {
 	// biome-ignore lint/correctness/noUnusedImports: used in <template>
 	DIVISIONS,
@@ -130,38 +132,96 @@ const stadiumSource = new VectorSource({
 	),
 });
 
-// アメリカ合衆国の州境界
-const {
-	geojson: usStates,
-	// biome-ignore lint/correctness/noUnusedVariables: used in <template>
-	loading: loadingUsStates,
-	// biome-ignore lint/correctness/noUnusedVariables: used in <template>
-	error: errorUsStates,
-	fetchUsStates,
-} = useUsStates();
-const showUsStates = ref(true);
-const usStateCount = ref(0);
-
 // マウスを乗せている州（名前をツールチップで表示し、色を濃くする）
 const hoveredState = ref<{ name: string; nameEn: string } | null>(null);
 const hoverPixel = ref<[number, number] | null>(null);
 let hoveredStateFeature: FeatureLike | null = null;
 
-const usStateStyle = new Style({
-	stroke: new Stroke({ color: "#6366f1", width: 1 }),
-	fill: new Fill({ color: "rgba(99, 102, 241, 0.05)" }),
-});
-const hoveredUsStateStyle = new Style({
-	stroke: new Stroke({ color: "#4f46e5", width: 2 }),
-	fill: new Fill({ color: "rgba(99, 102, 241, 0.2)" }),
-});
+interface BoundaryColors {
+	/** 凡例・線の色 */
+	stroke: string;
+	fill: string;
+	hoverStroke: string;
+	hoverFill: string;
+}
 
-const usStateSource = new VectorSource();
-const usStateLayer = new VectorLayer({
-	source: usStateSource,
-	style: (feature) =>
-		feature === hoveredStateFeature ? hoveredUsStateStyle : usStateStyle,
-});
+// 州境界のレイヤー（データの読み込み・表示切り替え・マウスを乗せたときの強調）を作る
+function createBoundaryLayer(
+	label: string,
+	colors: BoundaryColors,
+	data: Ref<AdminAreaCollection | null>,
+) {
+	const style = new Style({
+		stroke: new Stroke({ color: colors.stroke, width: 1 }),
+		fill: new Fill({ color: colors.fill }),
+	});
+	const hoveredStyle = new Style({
+		stroke: new Stroke({ color: colors.hoverStroke, width: 2 }),
+		fill: new Fill({ color: colors.hoverFill }),
+	});
+	const source = new VectorSource();
+	const layer = new VectorLayer({
+		source,
+		style: (feature) =>
+			feature === hoveredStateFeature ? hoveredStyle : style,
+	});
+	const state = reactive({ visible: true, count: 0 });
+
+	watch(data, (d) => {
+		source.clear();
+		if (d) {
+			source.addFeatures(
+				new GeoJSON().readFeatures(d, { featureProjection: "EPSG:3857" }),
+			);
+			state.count = d.features.length;
+		}
+	});
+	watch(
+		() => state.visible,
+		(v) => {
+			layer.setVisible(v);
+			if (!v) setHoveredState(null);
+		},
+	);
+
+	return { label, color: colors.stroke, layer, state };
+}
+
+const usStates = useUsStates();
+const canadaProvinces = useCanadaProvinces();
+
+const boundaryLayers = [
+	createBoundaryLayer(
+		"アメリカ合衆国の州",
+		{
+			stroke: "#6366f1",
+			fill: "rgba(99, 102, 241, 0.05)",
+			hoverStroke: "#4f46e5",
+			hoverFill: "rgba(99, 102, 241, 0.2)",
+		},
+		usStates.geojson,
+	),
+	// 薄紅（うすべに）
+	createBoundaryLayer(
+		"カナダの州・準州",
+		{
+			stroke: "#f0908d",
+			fill: "rgba(240, 144, 141, 0.12)",
+			hoverStroke: "#e0605c",
+			hoverFill: "rgba(240, 144, 141, 0.35)",
+		},
+		canadaProvinces.geojson,
+	),
+];
+
+// biome-ignore lint/correctness/noUnusedVariables: used in <template>
+const loadingBoundaries = computed(
+	() => usStates.loading.value || canadaProvinces.loading.value,
+);
+// biome-ignore lint/correctness/noUnusedVariables: used in <template>
+const boundaryError = computed(
+	() => usStates.error.value ?? canadaProvinces.error.value,
+);
 
 function setHoveredState(feature: FeatureLike | null, pixel?: number[]) {
 	hoverPixel.value = feature && pixel ? [pixel[0] ?? 0, pixel[1] ?? 0] : null;
@@ -173,22 +233,8 @@ function setHoveredState(feature: FeatureLike | null, pixel?: number[]) {
 				nameEn: feature.get("nameEn") as string,
 			}
 		: null;
-	usStateLayer.changed();
+	for (const { layer } of boundaryLayers) layer.changed();
 }
-
-watch(usStates, (data) => {
-	usStateSource.clear();
-	if (data) {
-		usStateSource.addFeatures(
-			new GeoJSON().readFeatures(data, { featureProjection: "EPSG:3857" }),
-		);
-		usStateCount.value = data.features.length;
-	}
-});
-watch(showUsStates, (v) => {
-	usStateLayer.setVisible(v);
-	if (!v) setHoveredState(null);
-});
 
 const stadiumLayer = new VectorLayer({
 	source: stadiumSource,
@@ -196,7 +242,9 @@ const stadiumLayer = new VectorLayer({
 });
 // クリックの対象は球場ピンだけにする（州のポリゴンは対象外）
 const stadiumLayerOnly = { layerFilter: (l: unknown) => l === stadiumLayer };
-const usStateLayerOnly = { layerFilter: (l: unknown) => l === usStateLayer };
+const boundaryLayerOnly = {
+	layerFilter: (l: unknown) => boundaryLayers.some((b) => b.layer === l),
+};
 
 let map: OlMap | null = null;
 let popupOverlay: Overlay | null = null;
@@ -239,7 +287,11 @@ onMounted(() => {
 
 	map = new OlMap({
 		target: mapContainer.value,
-		layers: [new TileLayer({ source: new OSM() }), usStateLayer, stadiumLayer],
+		layers: [
+			new TileLayer({ source: new OSM() }),
+			...boundaryLayers.map((b) => b.layer),
+			stadiumLayer,
+		],
 		overlays: [popupOverlay],
 		view: new View({
 			center: fromLonLat([-96.0, 38.5]),
@@ -277,7 +329,7 @@ onMounted(() => {
 		// 球場ピンの上では州名を出さない（ピンの邪魔にならないように）
 		const state = onStadium
 			? null
-			: (map?.forEachFeatureAtPixel(e.pixel, (f) => f, usStateLayerOnly) ??
+			: (map?.forEachFeatureAtPixel(e.pixel, (f) => f, boundaryLayerOnly) ??
 				null);
 		setHoveredState(state, e.pixel);
 	});
@@ -285,7 +337,8 @@ onMounted(() => {
 		setHoveredState(null),
 	);
 
-	fetchUsStates();
+	usStates.fetchUsStates();
+	canadaProvinces.fetchCanadaProvinces();
 });
 
 onUnmounted(() => {
@@ -300,7 +353,7 @@ onUnmounted(() => {
 
     <!-- 読み込み中 -->
     <div
-      v-if="loadingUsStates"
+      v-if="loadingBoundaries"
       class="absolute left-1/2 top-4 -translate-x-1/2 rounded-lg bg-white/90 px-4 py-2 text-sm shadow"
     >
       データを読み込み中...
@@ -308,10 +361,10 @@ onUnmounted(() => {
 
     <!-- エラー -->
     <div
-      v-if="errorUsStates"
+      v-if="boundaryError"
       class="absolute left-1/2 top-4 -translate-x-1/2 rounded-lg bg-red-100 px-4 py-2 text-sm text-red-700 shadow"
     >
-      {{ errorUsStates }}
+      {{ boundaryError }}
     </div>
 
     <!-- 表示切り替え -->
@@ -363,11 +416,22 @@ onUnmounted(() => {
       </div>
       <div class="mt-2 border-t border-gray-200 pt-2">
         <p class="text-xs text-gray-500">レイヤー</p>
-        <label class="mt-1 flex cursor-pointer items-center gap-2 text-sm">
-          <input v-model="showUsStates" class="accent-indigo-500" type="checkbox" />
-          <span class="size-3 shrink-0 rounded bg-indigo-500 opacity-50" />
-          アメリカ合衆国の州
-          <span class="text-xs text-gray-400">({{ usStateCount }})</span>
+        <label
+          v-for="boundary in boundaryLayers"
+          :key="boundary.label"
+          class="mt-1 flex cursor-pointer items-center gap-2 text-sm"
+        >
+          <input
+            v-model="boundary.state.visible"
+            :style="{ accentColor: boundary.color }"
+            type="checkbox"
+          />
+          <span
+            class="size-3 shrink-0 rounded opacity-60"
+            :style="{ backgroundColor: boundary.color }"
+          />
+          {{ boundary.label }}
+          <span class="text-xs text-gray-400">({{ boundary.state.count }})</span>
         </label>
       </div>
     </div>

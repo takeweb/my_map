@@ -32,7 +32,7 @@ describe("MlbMapView", () => {
 		vi.stubGlobal(
 			"fetch",
 			vi.fn().mockImplementation(async (url: string) =>
-				url === "/data/us-states.geojson"
+				url.startsWith("/data/")
 					? { ok: true, json: async () => mockUsStates }
 					: {
 							ok: true,
@@ -54,19 +54,21 @@ describe("MlbMapView", () => {
 
 	it("loads team logos for the map pins", async () => {
 		await mountSuspended(MlbMapView);
-		// ロゴ 30 件 + 州境界データ 1 件
-		expect(fetch).toHaveBeenCalledTimes(31);
+		// ロゴ 30 件 + 州境界データ 2 件（アメリカ合衆国・カナダ）
+		expect(fetch).toHaveBeenCalledTimes(32);
 		expect(fetch).toHaveBeenCalledWith(
 			"https://www.mlbstatic.com/team-logos/119.svg",
 		);
 	});
 
-	it("loads the US state polygons layer", async () => {
+	it("loads the US and Canada boundary layers", async () => {
 		const wrapper = await mountSuspended(MlbMapView);
-		await vi.waitFor(() =>
-			expect(wrapper.text()).toContain("アメリカ合衆国の州 (1)"),
-		);
+		await vi.waitFor(() => {
+			expect(wrapper.text()).toContain("アメリカ合衆国の州 (1)");
+			expect(wrapper.text()).toContain("カナダの州・準州 (1)");
+		});
 		expect(fetch).toHaveBeenCalledWith("/data/us-states.geojson");
+		expect(fetch).toHaveBeenCalledWith("/data/canada-provinces.geojson");
 	});
 
 	it("updates the count when a division is selected", async () => {

@@ -11,7 +11,7 @@
 		"fetch-osm:castles": "node scripts/fetch-osm.mjs castles",
 		"fetch-osm:dams": "node scripts/fetch-osm.mjs dams",
 		"fetch-osm:prefectures": "node scripts/fetch-osm.mjs prefectures",
-		"fetch-us-states": "node scripts/fetch-us-states.mjs",
+		"fetch-states": "node scripts/fetch-states.mjs",
 		"generate": "node scripts/fetch-osm.mjs && nuxt generate",
 		"preview": "nuxt preview",
 		"postinstall": "nuxt prepare",
