@@ -2,7 +2,7 @@
 
 日本の灯台・城・ダムをOpenStreetMapデータで地図上に表示するSPAです。名称で検索してポイントをハイライト表示できます。
 
-`/mlb` では MLB 全30球団のホーム球場を球団ロゴのピンで表示します（リーグ別・地区別の切り替え、球場アイコンのクリックでチーム名・球団ロゴ・球場名・都市名をポップアップ表示）。
+`/mlb` では MLB 全30球団のホーム球場を球団ロゴのピンで表示します（アメリカ合衆国の州境界レイヤー付き。リーグ別・地区別の切り替え、球場アイコンのクリックでチーム名・球団ロゴ・球場名・都市名をポップアップ表示）。
 
 ## 技術スタック
 
@@ -32,6 +32,7 @@ pnpm dev         # http://localhost:3000（データ取得済みの場合）
 pnpm dev          # 開発サーバー起動
 pnpm dev:fetch    # OSMデータ取得 → 開発サーバー起動
 pnpm fetch-osm    # OSMデータ取得のみ（public/data/*.geojson を生成）
+pnpm fetch-us-states  # アメリカ合衆国の州境界データを取得（public/data/us-states.geojson を生成）
 pnpm generate     # OSMデータ取得 → スタティックサイト生成
 pnpm preview      # generate したビルドをプレビュー
 pnpm lint         # Biome で lint・フォーマットチェック
@@ -51,6 +52,10 @@ pnpm test:run     # Vitest を1回だけ実行（CI用）
 | `dams.geojson` | `waterway=dam` |
 
 `public/data/` はGit管理対象です。データを更新する場合はローカルで `pnpm fetch-osm` を実行してコミット・プッシュしてください。
+
+### アメリカ合衆国の州境界データ
+
+`pnpm fetch-us-states` で [Natural Earth](https://www.naturalearthdata.com/)（パブリックドメイン）の 1:50m 州境界から50州とコロンビア特別区を取り出し、`public/data/us-states.geojson` に保存します。州境界はほぼ変わらないため、`pnpm generate` には含めていません。
 
 ### MLB 球場データ
 

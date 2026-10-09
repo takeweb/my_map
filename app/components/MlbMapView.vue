@@ -2,6 +2,7 @@
 import { boundingExtent } from "ol/extent";
 import type { FeatureLike } from "ol/Feature";
 import Feature from "ol/Feature";
+import GeoJSON from "ol/format/GeoJSON";
 import Point from "ol/geom/Point";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
@@ -10,7 +11,9 @@ import Overlay from "ol/Overlay";
 import { fromLonLat } from "ol/proj";
 import OSM from "ol/source/OSM";
 import VectorSource from "ol/source/Vector";
+import Fill from "ol/style/Fill";
 import Icon from "ol/style/Icon";
+import Stroke from "ol/style/Stroke";
 import Style from "ol/style/Style";
 import View from "ol/View";
 import {
@@ -127,6 +130,45 @@ const stadiumSource = new VectorSource({
 	),
 });
 
+// アメリカ合衆国の州境界
+const {
+	geojson: usStates,
+	// biome-ignore lint/correctness/noUnusedVariables: used in <template>
+	loading: loadingUsStates,
+	// biome-ignore lint/correctness/noUnusedVariables: used in <template>
+	error: errorUsStates,
+	fetchUsStates,
+} = useUsStates();
+const showUsStates = ref(true);
+const usStateCount = ref(0);
+
+const usStateSource = new VectorSource();
+const usStateLayer = new VectorLayer({
+	source: usStateSource,
+	style: new Style({
+		stroke: new Stroke({ color: "#6366f1", width: 1 }),
+		fill: new Fill({ color: "rgba(99, 102, 241, 0.05)" }),
+	}),
+});
+
+watch(usStates, (data) => {
+	usStateSource.clear();
+	if (data) {
+		usStateSource.addFeatures(
+			new GeoJSON().readFeatures(data, { featureProjection: "EPSG:3857" }),
+		);
+		usStateCount.value = data.features.length;
+	}
+});
+watch(showUsStates, (v) => usStateLayer.setVisible(v));
+
+const stadiumLayer = new VectorLayer({
+	source: stadiumSource,
+	style: stadiumStyleFn,
+});
+// クリック・ホバーの対象は球場ピンだけにする（州のポリゴンは対象外）
+const stadiumLayerOnly = { layerFilter: (l: unknown) => l === stadiumLayer };
+
 let map: OlMap | null = null;
 let popupOverlay: Overlay | null = null;
 
@@ -168,10 +210,7 @@ onMounted(() => {
 
 	map = new OlMap({
 		target: mapContainer.value,
-		layers: [
-			new TileLayer({ source: new OSM() }),
-			new VectorLayer({ source: stadiumSource, style: stadiumStyleFn }),
-		],
+		layers: [new TileLayer({ source: new OSM() }), usStateLayer, stadiumLayer],
 		overlays: [popupOverlay],
 		view: new View({
 			center: fromLonLat([-96.0, 38.5]),
@@ -181,7 +220,11 @@ onMounted(() => {
 	fitToVisible();
 
 	map.on("click", async (e) => {
-		const feature = map?.forEachFeatureAtPixel(e.pixel, (f) => f);
+		const feature = map?.forEachFeatureAtPixel(
+			e.pixel,
+			(f) => f,
+			stadiumLayerOnly,
+		);
 		if (!feature) {
 			closePopup();
 			return;
@@ -199,11 +242,16 @@ onMounted(() => {
 
 	map.on("pointermove", (e) => {
 		if (mapContainer.value) {
-			mapContainer.value.style.cursor = map?.hasFeatureAtPixel(e.pixel)
+			mapContainer.value.style.cursor = map?.hasFeatureAtPixel(
+				e.pixel,
+				stadiumLayerOnly,
+			)
 				? "pointer"
 				: "";
 		}
 	});
+
+	fetchUsStates();
 });
 
 onUnmounted(() => {
@@ -215,6 +263,22 @@ onUnmounted(() => {
 <template>
   <div class="relative w-full h-screen">
     <div ref="mapContainer" class="w-full h-full" />
+
+    <!-- 読み込み中 -->
+    <div
+      v-if="loadingUsStates"
+      class="absolute left-1/2 top-4 -translate-x-1/2 rounded-lg bg-white/90 px-4 py-2 text-sm shadow"
+    >
+      データを読み込み中...
+    </div>
+
+    <!-- エラー -->
+    <div
+      v-if="errorUsStates"
+      class="absolute left-1/2 top-4 -translate-x-1/2 rounded-lg bg-red-100 px-4 py-2 text-sm text-red-700 shadow"
+    >
+      {{ errorUsStates }}
+    </div>
 
     <!-- 表示切り替え -->
     <div class="absolute right-4 top-4 rounded-lg bg-white/90 p-3 shadow-md">
@@ -262,6 +326,15 @@ onUnmounted(() => {
             {{ filter.label }}
           </label>
         </div>
+      </div>
+      <div class="mt-2 border-t border-gray-200 pt-2">
+        <p class="text-xs text-gray-500">レイヤー</p>
+        <label class="mt-1 flex cursor-pointer items-center gap-2 text-sm">
+          <input v-model="showUsStates" class="accent-indigo-500" type="checkbox" />
+          <span class="size-3 shrink-0 rounded bg-indigo-500 opacity-50" />
+          アメリカ合衆国の州
+          <span class="text-xs text-gray-400">({{ usStateCount }})</span>
+        </label>
       </div>
     </div>
 
