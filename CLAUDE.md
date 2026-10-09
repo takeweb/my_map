@@ -52,7 +52,8 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 
 - 球場データは `app/data/mlbStadiums.json`（手動管理、OSM 取得の対象外）。型・リーグ/地区の定義・表示フィルタは `app/utils/mlbStadiums.ts` にまとめている
 - データ更新時は MLB Stats API（`statsapi.mlb.com/api/v1/teams?sportId=1&season=<年>&hydrate=venue(location)`）と照合する。`id` は同 API のチーム ID で、ロゴ URL（`mlbstatic.com/team-logos/{id}.svg`）にも使う
-- アイコンはリーグ色の SVG を data URI にした `ol/style/Icon`。表示フィルタはスタイル関数で `[]` を返して非表示にし、切り替え時に `source.changed()` と `view.fit()` を呼ぶ
+- アイコンは、リーグ色のピンの中に球団ロゴを入れた SVG を data URI にした `ol/style/Icon`。ロゴ SVG は `fetch` で取得してピンの SVG に埋め込む（画像として読み込む SVG は外部 URL を参照できないため）。取得前・失敗時は野球のダイヤモンドのピンを表示する
+- 表示フィルタはスタイル関数で `[]` を返して非表示にし、切り替え時に `source.changed()` と `view.fit()` を呼ぶ
 - ポップアップは `ol/Overlay` で球場座標に固定する（地図を動かしても追従する）
 
 ### スタイリング

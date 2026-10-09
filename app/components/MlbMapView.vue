@@ -49,7 +49,7 @@ const groupedFilters = [
 	filters: STADIUM_FILTERS.filter((f) => f.group === group),
 }));
 
-// 球場アイコン（ピン + 野球のダイヤモンド）。リーグごとに色を変える
+// ロゴ読み込み前・読み込み失敗時のアイコン（ピン + 野球のダイヤモンド）
 function stadiumIconSvg(color: string) {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">
 	<path d="M18 45 C18 45 2 27.5 2 17 A16 16 0 0 1 34 17 C34 27.5 18 45 18 45 Z" fill="${color}" stroke="#fff" stroke-width="2"/>
@@ -64,24 +64,57 @@ function stadiumIconSvg(color: string) {
 </svg>`;
 }
 
-const iconStyles = Object.fromEntries(
+// 球団ロゴのピン。ロゴは縦横比がチームごとに異なるため、
+// SVG を data URI で埋め込み preserveAspectRatio で白い円の中に収める
+// （画像として読み込む SVG は外部 URL を参照できないため埋め込みが必要）
+function logoPinSvg(color: string, logoSvg: string) {
+	const logo = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg)}`;
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="56" viewBox="0 0 44 56">
+	<path d="M22 55 C22 55 2 34 2 21 A20 20 0 0 1 42 21 C42 34 22 55 22 55 Z" fill="${color}" stroke="#fff" stroke-width="2"/>
+	<circle cx="22" cy="21" r="16" fill="#fff"/>
+	<image href="${logo}" x="10" y="9" width="24" height="24" preserveAspectRatio="xMidYMid meet"/>
+</svg>`;
+}
+
+function svgIconStyle(svg: string, width: number, height: number) {
+	return new Style({
+		image: new Icon({
+			src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+			width,
+			height,
+			anchor: [0.5, 1],
+		}),
+	});
+}
+
+const fallbackStyles = Object.fromEntries(
 	(Object.keys(LEAGUES) as League[]).map((league) => [
 		league,
-		new Style({
-			image: new Icon({
-				src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(stadiumIconSvg(LEAGUES[league].color))}`,
-				width: 36,
-				height: 46,
-				anchor: [0.5, 1],
-			}),
-		}),
+		svgIconStyle(stadiumIconSvg(LEAGUES[league].color), 36, 46),
 	]),
 ) as Record<League, Style>;
+
+// チーム ID → ロゴピンのスタイル（読み込みに成功したものだけ入る）
+const logoStyles = new Map<number, Style>();
+
+async function loadLogoStyle(stadium: Stadium) {
+	try {
+		const res = await fetch(teamLogoUrl(stadium.id));
+		if (!res.ok) return;
+		const logoSvg = await res.text();
+		logoStyles.set(
+			stadium.id,
+			svgIconStyle(logoPinSvg(LEAGUES[stadium.league].color, logoSvg), 44, 56),
+		);
+	} catch {
+		// 読み込めない場合はダイヤモンドのアイコンのまま表示する
+	}
+}
 
 function stadiumStyleFn(feature: FeatureLike) {
 	const stadium = feature.get("stadium") as Stadium;
 	if (!selectedFilter.value.match(stadium)) return [];
-	return iconStyles[stadium.league];
+	return logoStyles.get(stadium.id) ?? fallbackStyles[stadium.league];
 }
 
 const stadiumSource = new VectorSource({
@@ -110,8 +143,8 @@ function fitToVisible(duration = 0) {
 	if (!map || coords.length === 0) return;
 	// biome-ignore lint/suspicious/noFocusedTests: ol/View#fit であり Vitest の fit ではない
 	map.getView().fit(boundingExtent(coords), {
-		// 右上の表示切り替えパネルと重ならないよう右側を広めに空ける
-		padding: [60, 280, 60, 60],
+		// 右上の表示切り替えパネルと重ならないよう右側を、ピンの高さ分だけ上側を広めに空ける
+		padding: [90, 280, 60, 60],
 		maxZoom: 7,
 		duration,
 	});
@@ -129,7 +162,7 @@ onMounted(() => {
 	popupOverlay = new Overlay({
 		element: popupElement.value,
 		positioning: "bottom-center",
-		offset: [0, -50],
+		offset: [0, -60],
 		autoPan: { animation: { duration: 250 } },
 	});
 
@@ -147,7 +180,7 @@ onMounted(() => {
 	});
 	fitToVisible();
 
-	map.on("click", (e) => {
+	map.on("click", async (e) => {
 		const feature = map?.forEachFeatureAtPixel(e.pixel, (f) => f);
 		if (!feature) {
 			closePopup();
@@ -155,10 +188,14 @@ onMounted(() => {
 		}
 		selectedStadium.value = feature.get("stadium") as Stadium;
 		logoError.value = false;
+		// ポップアップの中身が描画されてから位置を決めないと autoPan が効かない
+		await nextTick();
 		popupOverlay?.setPosition(
 			(feature.getGeometry() as Point).getCoordinates(),
 		);
 	});
+
+	Promise.all(STADIUMS.map(loadLogoStyle)).then(() => stadiumSource.changed());
 
 	map.on("pointermove", (e) => {
 		if (mapContainer.value) {
