@@ -142,14 +142,39 @@ const {
 const showUsStates = ref(true);
 const usStateCount = ref(0);
 
+// マウスを乗せている州（名前をツールチップで表示し、色を濃くする）
+const hoveredState = ref<{ name: string; nameEn: string } | null>(null);
+const hoverPixel = ref<[number, number] | null>(null);
+let hoveredStateFeature: FeatureLike | null = null;
+
+const usStateStyle = new Style({
+	stroke: new Stroke({ color: "#6366f1", width: 1 }),
+	fill: new Fill({ color: "rgba(99, 102, 241, 0.05)" }),
+});
+const hoveredUsStateStyle = new Style({
+	stroke: new Stroke({ color: "#4f46e5", width: 2 }),
+	fill: new Fill({ color: "rgba(99, 102, 241, 0.2)" }),
+});
+
 const usStateSource = new VectorSource();
 const usStateLayer = new VectorLayer({
 	source: usStateSource,
-	style: new Style({
-		stroke: new Stroke({ color: "#6366f1", width: 1 }),
-		fill: new Fill({ color: "rgba(99, 102, 241, 0.05)" }),
-	}),
+	style: (feature) =>
+		feature === hoveredStateFeature ? hoveredUsStateStyle : usStateStyle,
 });
+
+function setHoveredState(feature: FeatureLike | null, pixel?: number[]) {
+	hoverPixel.value = feature && pixel ? [pixel[0] ?? 0, pixel[1] ?? 0] : null;
+	if (feature === hoveredStateFeature) return;
+	hoveredStateFeature = feature;
+	hoveredState.value = feature
+		? {
+				name: feature.get("name") as string,
+				nameEn: feature.get("nameEn") as string,
+			}
+		: null;
+	usStateLayer.changed();
+}
 
 watch(usStates, (data) => {
 	usStateSource.clear();
@@ -160,14 +185,18 @@ watch(usStates, (data) => {
 		usStateCount.value = data.features.length;
 	}
 });
-watch(showUsStates, (v) => usStateLayer.setVisible(v));
+watch(showUsStates, (v) => {
+	usStateLayer.setVisible(v);
+	if (!v) setHoveredState(null);
+});
 
 const stadiumLayer = new VectorLayer({
 	source: stadiumSource,
 	style: stadiumStyleFn,
 });
-// クリック・ホバーの対象は球場ピンだけにする（州のポリゴンは対象外）
+// クリックの対象は球場ピンだけにする（州のポリゴンは対象外）
 const stadiumLayerOnly = { layerFilter: (l: unknown) => l === stadiumLayer };
+const usStateLayerOnly = { layerFilter: (l: unknown) => l === usStateLayer };
 
 let map: OlMap | null = null;
 let popupOverlay: Overlay | null = null;
@@ -241,15 +270,20 @@ onMounted(() => {
 	Promise.all(STADIUMS.map(loadLogoStyle)).then(() => stadiumSource.changed());
 
 	map.on("pointermove", (e) => {
+		const onStadium = map?.hasFeatureAtPixel(e.pixel, stadiumLayerOnly);
 		if (mapContainer.value) {
-			mapContainer.value.style.cursor = map?.hasFeatureAtPixel(
-				e.pixel,
-				stadiumLayerOnly,
-			)
-				? "pointer"
-				: "";
+			mapContainer.value.style.cursor = onStadium ? "pointer" : "";
 		}
+		// 球場ピンの上では州名を出さない（ピンの邪魔にならないように）
+		const state = onStadium
+			? null
+			: (map?.forEachFeatureAtPixel(e.pixel, (f) => f, usStateLayerOnly) ??
+				null);
+		setHoveredState(state, e.pixel);
 	});
+	mapContainer.value.addEventListener("pointerleave", () =>
+		setHoveredState(null),
+	);
 
 	fetchUsStates();
 });
@@ -336,6 +370,16 @@ onUnmounted(() => {
           <span class="text-xs text-gray-400">({{ usStateCount }})</span>
         </label>
       </div>
+    </div>
+
+    <!-- 州名のツールチップ -->
+    <div
+      v-if="hoveredState && hoverPixel"
+      class="pointer-events-none absolute rounded-lg bg-white/95 px-2.5 py-1.5 text-sm shadow-md"
+      :style="{ left: `${hoverPixel[0] + 14}px`, top: `${hoverPixel[1] + 14}px` }"
+    >
+      <p class="font-bold leading-tight">{{ hoveredState.name }}</p>
+      <p class="text-xs text-gray-500">{{ hoveredState.nameEn }}</p>
     </div>
 
     <!-- クリックポップアップ（OpenLayers の Overlay で球場位置に固定） -->
