@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm fetch-osm    # OSMデータをビルド時取得（public/data/*.json を生成）
+pnpm fetch-states # アメリカ合衆国・カナダの州境界を取得（public/data/us-states.geojson・canada-provinces.geojson を生成）
 pnpm dev          # 開発サーバー起動（データ取得済みの場合）
 pnpm dev:fetch    # OSMデータ取得 → 開発サーバー起動
 pnpm build        # サーバーレンダリングビルド（通常は未使用）
@@ -45,6 +46,19 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 - 新しい種別を追加するには `scripts/fetch-osm.mjs` に FEATURES エントリを追加し、`useOsmPoints` ラッパーを作るだけでよい
 
 `MapView.vue` では `Promise.all` で全データを並列フェッチし、`VectorLayer` をレイヤーごとに独立して管理する。右上のチェックボックスの変更は `watch` → `layer.setVisible()` で即時反映する。ポイントレイヤーのスタイルは関数形式で、`feature.get("prefecture_code")` が `visiblePrefCodes` に含まれない場合は `[]` を返して非表示にする。都道府県トグル変更時は `lighthouseSource.changed()` / `castleSource.changed()` / `damSource.changed()` を呼んで再描画する。
+
+### MLB 球場マップ（`/mlb`）
+
+`app/pages/mlb.vue` → `app/components/MlbMapView.vue`。日本の地図（`MapView.vue`）とは独立した OpenLayers インスタンスを持つ。
+
+- 球場データは `app/data/mlbStadiums.json`（手動管理、OSM 取得の対象外）。型・リーグ/地区の定義・表示フィルタは `app/utils/mlbStadiums.ts` にまとめている
+- データ更新時は MLB Stats API（`statsapi.mlb.com/api/v1/teams?sportId=1&season=<年>&hydrate=venue(location)`）と照合する。`id` は同 API のチーム ID で、ロゴ URL（`mlbstatic.com/team-logos/{id}.svg`）にも使う
+- アイコンは、リーグ色のピンの中に球団ロゴを入れた SVG を data URI にした `ol/style/Icon`。ロゴ SVG は `fetch` で取得してピンの SVG に埋め込む（画像として読み込む SVG は外部 URL を参照できないため）。取得前・失敗時は野球のダイヤモンドのピンを表示する
+- 表示フィルタはスタイル関数で `[]` を返して非表示にし、切り替え時に `source.changed()` と `view.fit()` を呼ぶ
+- ポップアップは `ol/Overlay` で球場座標に固定する（地図を動かしても追従する）
+- 州境界レイヤーはアメリカ合衆国（藍色、`useUsStates` → `/data/us-states.geojson`）とカナダ（薄紅 `#f0908d`、`useCanadaProvinces` → `/data/canada-provinces.geojson`）の2つ。どちらも共通実装 `useAdminAreas` の薄いラッパーで、コンポーネント側も `createBoundaryLayer` で同じ作りにしている。データは `scripts/fetch-states.mjs` が Natural Earth（1:50m、パブリックドメイン）から生成する。OSM の行政境界は米国全体だと巨大になるため使っていない。州境界は変化しないため `pnpm generate` には含めない
+- クリックは `layerFilter` で球場レイヤーだけを対象にする（州のポリゴンでポップアップが開かないように）
+- 州にマウスを乗せると、州名（日本語・英語）のツールチップを出し、その州を濃い色で表示する。球場ピンの上では州名を出さない
 
 ### スタイリング
 
