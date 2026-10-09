@@ -46,6 +46,15 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 
 `MapView.vue` では `Promise.all` で全データを並列フェッチし、`VectorLayer` をレイヤーごとに独立して管理する。右上のチェックボックスの変更は `watch` → `layer.setVisible()` で即時反映する。ポイントレイヤーのスタイルは関数形式で、`feature.get("prefecture_code")` が `visiblePrefCodes` に含まれない場合は `[]` を返して非表示にする。都道府県トグル変更時は `lighthouseSource.changed()` / `castleSource.changed()` / `damSource.changed()` を呼んで再描画する。
 
+### MLB 球場マップ（`/mlb`）
+
+`app/pages/mlb.vue` → `app/components/MlbMapView.vue`。日本の地図（`MapView.vue`）とは独立した OpenLayers インスタンスを持つ。
+
+- 球場データは `app/data/mlbStadiums.json`（手動管理、OSM 取得の対象外）。型・リーグ/地区の定義・表示フィルタは `app/utils/mlbStadiums.ts` にまとめている
+- データ更新時は MLB Stats API（`statsapi.mlb.com/api/v1/teams?sportId=1&season=<年>&hydrate=venue(location)`）と照合する。`id` は同 API のチーム ID で、ロゴ URL（`mlbstatic.com/team-logos/{id}.svg`）にも使う
+- アイコンはリーグ色の SVG を data URI にした `ol/style/Icon`。表示フィルタはスタイル関数で `[]` を返して非表示にし、切り替え時に `source.changed()` と `view.fit()` を呼ぶ
+- ポップアップは `ol/Overlay` で球場座標に固定する（地図を動かしても追従する）
+
 ### スタイリング
 
 TailwindCSS v4を使用。`@tailwindcss/vite` プラグインを `nuxt.config.ts` の `vite.plugins` に登録しており、`app/assets/css/main.css`（`@import "tailwindcss"` のみ）をエントリーポイントとしてグローバルに読み込む。v4はコンテンツ対象ファイルの自動検出のため `tailwind.config` ファイルは不要。

@@ -2,6 +2,8 @@
 
 日本の灯台・城・ダムをOpenStreetMapデータで地図上に表示するSPAです。名称で検索してポイントをハイライト表示できます。
 
+`/mlb` では MLB 全30球団のホーム球場を表示します（リーグ別・地区別の切り替え、球場アイコンのクリックでチーム名・球団ロゴ・球場名・都市名をポップアップ表示）。
+
 ## 技術スタック
 
 - [Nuxt 4](https://nuxt.com/) (ssr: false)
@@ -49,6 +51,10 @@ pnpm test:run     # Vitest を1回だけ実行（CI用）
 | `dams.geojson` | `waterway=dam` |
 
 `public/data/` はGit管理対象です。データを更新する場合はローカルで `pnpm fetch-osm` を実行してコミット・プッシュしてください。
+
+### MLB 球場データ
+
+`app/data/mlbStadiums.json` に手動で管理しています（OSM からは取得しません）。球場名・座標は [MLB Stats API](https://statsapi.mlb.com/api/v1/teams?sportId=1&season=2026&hydrate=venue(location)) の2026年シーズン情報と照合済みです。球団ロゴは `https://www.mlbstatic.com/team-logos/{チームID}.svg` を参照しています。
 
 ## デプロイ
 
