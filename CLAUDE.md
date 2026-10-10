@@ -47,6 +47,15 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 
 `MapView.vue` では `Promise.all` で全データを並列フェッチし、`VectorLayer` をレイヤーごとに独立して管理する。右上のチェックボックスの変更は `watch` → `layer.setVisible()` で即時反映する。ポイントレイヤーのスタイルは関数形式で、`feature.get("prefecture_code")` が `visiblePrefCodes` に含まれない場合は `[]` を返して非表示にする。都道府県トグル変更時は `lighthouseSource.changed()` / `castleSource.changed()` / `damSource.changed()` を呼んで再描画する。
 
+### 平面直角座標（JGD2000・JGD2011）
+
+`MapView.vue` のレイヤー一覧で「平面直角座標」をオンにすると、選んだ測地系・系（I〜XIX）の X・Y グリッド線と、マウス位置の座標（X: 北方向、Y: 東方向、m）を表示する。系の定義・グリッド計算は `app/utils/planeRectangular.ts` にまとめている。
+
+- 投影法は `proj4` で EPSG:2443〜2461（JGD2000）・EPSG:6669〜6687（JGD2011）を定義し、`ol/proj/proj4` の `register` で OpenLayers に登録する（`registerPlaneRectangularProjections`）
+- JGD2000 と JGD2011 は同じ GRS80・同じ原点なので、変換式は同一（違いは地殻変動による緯度経度そのものの改定で、変換パラメータでは表せない）
+- グリッドは `moveend` ごとに表示範囲から作り直す。間隔は表示範囲に応じて 100m〜200km から選ぶ。中央子午線から離れると横メルカトルが破綻するため、原点から経緯度 ±20° の範囲に限る
+- クリック・カーソル判定は `layerFilter` でポイントレイヤーだけを対象にする（グリッド線でポップアップが開かないように）
+
 ### MLB 球場マップ（`/mlb`）
 
 `app/pages/mlb.vue` → `app/components/MlbMapView.vue`。日本の地図（`MapView.vue`）とは独立した OpenLayers インスタンスを持つ。
