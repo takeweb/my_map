@@ -387,24 +387,56 @@ function updateGrid() {
 	gridSource.addFeatures(features);
 }
 
+// 地図座標（EPSG:3857）を選択中の系の平面直角座標に変換する
+// 平面直角座標系では北方向が X、東方向が Y
+function toPlaneRect(coordinate: number[]) {
+	const [e, n] = transform(
+		coordinate,
+		"EPSG:3857",
+		epsgCode(planeRect.datum, planeRect.zone),
+	) as [number, number];
+	return { x: n, y: e };
+}
+
 function updateCursorCoord(coordinate: number[]) {
 	if (!planeRect.enabled) {
 		cursorCoord.value = null;
 		return;
 	}
 	const [lon, lat] = toLonLat(coordinate) as [number, number];
-	const [e, n] = transform(
-		coordinate,
-		"EPSG:3857",
-		epsgCode(planeRect.datum, planeRect.zone),
-	) as [number, number];
-	// 平面直角座標系では北方向が X、東方向が Y
+	const { x, y } = toPlaneRect(coordinate);
 	cursorCoord.value = {
 		lat: lat.toFixed(6),
 		lon: lon.toFixed(6),
-		x: formatCoordinate(n),
-		y: formatCoordinate(e),
+		x: formatCoordinate(x),
+		y: formatCoordinate(y),
 	};
+}
+
+// クリックした位置の X・Y・緯度・経度をクリップボードにコピーする
+// 表計算ソフトに貼るとセルに分かれるようタブ区切りにする
+const copyMessage = ref<string | null>(null);
+let copyMessageTimer: ReturnType<typeof setTimeout> | undefined;
+
+function showCopyMessage(message: string) {
+	copyMessage.value = message;
+	clearTimeout(copyMessageTimer);
+	copyMessageTimer = setTimeout(() => {
+		copyMessage.value = null;
+	}, 2000);
+}
+
+async function copyPlaneRect(coordinate: number[]) {
+	if (!planeRect.enabled) return;
+	const { x, y } = toPlaneRect(coordinate);
+	const [lon, lat] = toLonLat(coordinate) as [number, number];
+	const text = [x.toFixed(3), y.toFixed(3), lat.toFixed(6), lon.toFixed(6)];
+	try {
+		await navigator.clipboard.writeText(text.join("\t"));
+		showCopyMessage("座標をコピーしました");
+	} catch {
+		showCopyMessage("コピーできませんでした");
+	}
 }
 
 // 選択中の系の区域だけを塗る
@@ -698,6 +730,12 @@ onMounted(async () => {
 		}
 	});
 
+	// 灯台・城・ダムのマーカーの上ではコピーしない（名前のポップアップだけ出す）
+	map.on("singleclick", (e) => {
+		if (map?.hasFeatureAtPixel(e.pixel, { layerFilter: isPointLayer })) return;
+		copyPlaneRect(e.coordinate);
+	});
+
 	map.on("pointermove", (e) => {
 		if (mapContainer.value) {
 			mapContainer.value.style.cursor = map?.hasFeatureAtPixel(e.pixel, {
@@ -718,6 +756,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+	clearTimeout(copyMessageTimer);
 	map?.setTarget(undefined);
 	map = null;
 });
@@ -889,6 +928,15 @@ onUnmounted(() => {
       <p>X: {{ cursorCoord.x }} m</p>
       <p>Y: {{ cursorCoord.y }} m</p>
       <p class="mt-1 text-gray-500">{{ cursorCoord.lat }}, {{ cursorCoord.lon }}</p>
+      <p class="mt-1 font-sans text-gray-400">クリックで X・Y・緯度・経度をコピー</p>
+    </div>
+
+    <!-- コピーの結果 -->
+    <div
+      v-if="copyMessage"
+      class="absolute left-1/2 bottom-16 -translate-x-1/2 rounded-lg bg-gray-800/90 px-4 py-2 text-sm text-white shadow"
+    >
+      {{ copyMessage }}
     </div>
 
     <!-- クリックポップアップ -->
