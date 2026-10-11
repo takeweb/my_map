@@ -250,3 +250,13 @@ export function formatCoordinate(value: number): string {
 		maximumFractionDigits: 3,
 	});
 }
+
+/** 原点の経緯度を「36°00′N 139°50′E」の形にする */
+export function formatOrigin({ lat0, lon0 }: PlaneRectangularZone): string {
+	const dm = (value: number) => {
+		const deg = Math.floor(value);
+		const min = Math.round((value - deg) * 60);
+		return `${deg}°${String(min).padStart(2, "0")}′`;
+	};
+	return `${dm(lat0)}N ${dm(lon0)}E`;
+}

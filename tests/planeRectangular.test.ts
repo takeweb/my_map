@@ -5,6 +5,7 @@ import {
 	chooseGridInterval,
 	epsgCode,
 	formatGridLabel,
+	formatOrigin,
 	getZone,
 	PLANE_RECTANGULAR_ZONES,
 	registerPlaneRectangularProjections,
@@ -83,5 +84,11 @@ describe("planeRectangular", () => {
 		expect(formatGridLabel({ axis: "y", value: 500, coords: [] }, 100)).toBe(
 			"Y=500m",
 		);
+	});
+
+	it("原点の経緯度を度分で表示する", () => {
+		expect(formatOrigin(getZone(9))).toBe("36°00′N 139°50′E");
+		expect(formatOrigin(getZone(1))).toBe("33°00′N 129°30′E");
+		expect(formatOrigin(getZone(3))).toBe("36°00′N 132°10′E");
 	});
 });

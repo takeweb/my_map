@@ -25,6 +25,7 @@ import {
 	epsgCode,
 	formatCoordinate,
 	formatGridLabel,
+	formatOrigin,
 	getZone,
 	PLANE_RECTANGULAR_ZONES,
 	registerPlaneRectangularProjections,
@@ -167,6 +168,7 @@ const castleSource = new VectorSource();
 const damSource = new VectorSource();
 const gridSource = new VectorSource();
 const zoneSource = new VectorSource();
+const originSource = new VectorSource();
 
 const lighthouseCount = ref(0);
 const castleCount = ref(0);
@@ -251,6 +253,7 @@ let castleLayer: VectorLayer | null = null;
 let damLayer: VectorLayer | null = null;
 let gridLayer: VectorLayer | null = null;
 let zoneLayer: VectorLayer | null = null;
+let originLayer: VectorLayer | null = null;
 let map: OlMap | null = null;
 
 function countVisible(source: VectorSource) {
@@ -414,6 +417,45 @@ function zoneStyleFn(feature: FeatureLike) {
 	return feature.get("zone") === planeRect.zone ? zoneStyle : [];
 }
 
+// 選択中の系の原点（X=0, Y=0）
+function originStyleFn(feature: FeatureLike) {
+	return [
+		new Style({
+			image: new CircleStyle({
+				radius: 9,
+				fill: new Fill({ color: "rgba(255, 255, 255, 0.9)" }),
+				stroke: new Stroke({ color: "#dc2626", width: 2 }),
+			}),
+		}),
+		new Style({
+			image: new CircleStyle({
+				radius: 3.5,
+				fill: new Fill({ color: "#dc2626" }),
+			}),
+			text: new Text({
+				text: feature.get("label") as string,
+				font: "bold 12px sans-serif",
+				fill: new Fill({ color: "#b91c1c" }),
+				stroke: new Stroke({ color: "#ffffff", width: 3 }),
+				textAlign: "left",
+				offsetX: 14,
+			}),
+		}),
+	];
+}
+
+function updateOrigin() {
+	originSource.clear();
+	if (!planeRect.enabled) return;
+	const zone = getZone(planeRect.zone);
+	originSource.addFeature(
+		new Feature({
+			geometry: new Point(fromLonLat([zone.lon0, zone.lat0])),
+			label: `${zone.roman}系 原点\n${formatOrigin(zone)}`,
+		}),
+	);
+}
+
 watch(planeZones, (data) => {
 	zoneSource.clear();
 	if (data) {
@@ -447,7 +489,9 @@ watch(
 	() => {
 		gridLayer?.setVisible(planeRect.enabled);
 		zoneLayer?.setVisible(planeRect.enabled);
+		originLayer?.setVisible(planeRect.enabled);
 		zoneSource.changed();
+		updateOrigin();
 		updateGrid();
 		if (!planeRect.enabled) cursorCoord.value = null;
 	},
@@ -601,6 +645,11 @@ onMounted(async () => {
 		style: zoneStyleFn,
 		visible: planeRect.enabled,
 	});
+	originLayer = new VectorLayer({
+		source: originSource,
+		style: originStyleFn,
+		visible: planeRect.enabled,
+	});
 	gridLayer = new VectorLayer({
 		source: gridSource,
 		style: gridStyleFn,
@@ -617,6 +666,7 @@ onMounted(async () => {
 			prefectureLayer,
 			zoneLayer,
 			gridLayer,
+			originLayer,
 			lighthouseLayer,
 			castleLayer,
 			damLayer,
