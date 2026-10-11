@@ -728,7 +728,9 @@ onMounted(async () => {
 		}
 	});
 
+	// 灯台・城・ダムのマーカーの上ではコピーしない（名前のポップアップだけ出す）
 	map.on("singleclick", (e) => {
+		if (map?.hasFeatureAtPixel(e.pixel, { layerFilter: isPointLayer })) return;
 		copyPlaneRect(e.coordinate);
 	});
 
