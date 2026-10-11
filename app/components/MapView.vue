@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { createEmpty, extend } from "ol/extent";
 import type { FeatureLike } from "ol/Feature";
 import Feature from "ol/Feature";
 import GeoJSON from "ol/format/GeoJSON";
@@ -128,13 +129,22 @@ const {
 // ダム
 const { dams, loading: loadingDams, error: errorDams, fetchDams } = useDams();
 
+// 平面直角座標系の適用区域（平面直角座標をオンにしたときに取得する）
+const {
+	geojson: planeZones,
+	loading: loadingPlaneZones,
+	error: errorPlaneZones,
+	fetchPlaneRectangularZones,
+} = usePlaneRectangularZones();
+
 // biome-ignore lint/correctness/noUnusedVariables: used in <template>
 const isLoading = computed(
 	() =>
 		loadingPrefectures.value ||
 		loadingLighthouses.value ||
 		loadingCastles.value ||
-		loadingDams.value,
+		loadingDams.value ||
+		loadingPlaneZones.value,
 );
 // biome-ignore lint/correctness/noUnusedVariables: used in <template>
 const fetchError = computed(
@@ -142,7 +152,8 @@ const fetchError = computed(
 		errorPrefectures.value ??
 		errorLighthouses.value ??
 		errorCastles.value ??
-		errorDams.value,
+		errorDams.value ??
+		errorPlaneZones.value,
 );
 // biome-ignore lint/correctness/noUnusedVariables: used in <template>
 const totalCount = computed(
@@ -155,6 +166,7 @@ const lighthouseSource = new VectorSource();
 const castleSource = new VectorSource();
 const damSource = new VectorSource();
 const gridSource = new VectorSource();
+const zoneSource = new VectorSource();
 
 const lighthouseCount = ref(0);
 const castleCount = ref(0);
@@ -238,6 +250,7 @@ let lighthouseLayer: VectorLayer | null = null;
 let castleLayer: VectorLayer | null = null;
 let damLayer: VectorLayer | null = null;
 let gridLayer: VectorLayer | null = null;
+let zoneLayer: VectorLayer | null = null;
 let map: OlMap | null = null;
 
 function countVisible(source: VectorSource) {
@@ -391,12 +404,61 @@ function updateCursorCoord(coordinate: number[]) {
 	};
 }
 
+// 選択中の系の区域だけを塗る
+const zoneStyle = new Style({
+	stroke: new Stroke({ color: "#dc2626", width: 2 }),
+	fill: new Fill({ color: "rgba(220, 38, 38, 0.15)" }),
+});
+
+function zoneStyleFn(feature: FeatureLike) {
+	return feature.get("zone") === planeRect.zone ? zoneStyle : [];
+}
+
+watch(planeZones, (data) => {
+	zoneSource.clear();
+	if (data) {
+		zoneSource.addFeatures(
+			geoJsonFormat.readFeatures(data, { featureProjection: "EPSG:3857" }),
+		);
+		fitToZone();
+	}
+});
+
+// 選択中の系の区域が収まるようにズームする（右上のパネルの分だけ右側を空ける）
+function fitToZone() {
+	if (!map || !planeRect.enabled) return;
+	const extent = createEmpty();
+	for (const f of zoneSource.getFeatures()) {
+		if (f.get("zone") !== planeRect.zone) continue;
+		const geom = f.getGeometry();
+		if (geom) extend(extent, geom.getExtent());
+	}
+	if (!Number.isFinite(extent[0])) return;
+	// biome-ignore lint/suspicious/noFocusedTests: ol/View#fit であり Vitest の fit ではない
+	map.getView().fit(extent, {
+		padding: [60, 300, 60, 60],
+		duration: 600,
+		maxZoom: 10,
+	});
+}
+
 watch(
 	() => [planeRect.enabled, planeRect.datum, planeRect.zone],
 	() => {
 		gridLayer?.setVisible(planeRect.enabled);
+		zoneLayer?.setVisible(planeRect.enabled);
+		zoneSource.changed();
 		updateGrid();
 		if (!planeRect.enabled) cursorCoord.value = null;
+	},
+);
+
+watch(
+	() => [planeRect.enabled, planeRect.zone],
+	() => {
+		if (!planeRect.enabled) return;
+		if (planeZones.value) fitToZone();
+		else fetchPlaneRectangularZones();
 	},
 );
 
@@ -534,6 +596,11 @@ onMounted(async () => {
 		style: damStyleFn,
 		visible: visibleLayers.dams,
 	});
+	zoneLayer = new VectorLayer({
+		source: zoneSource,
+		style: zoneStyleFn,
+		visible: planeRect.enabled,
+	});
 	gridLayer = new VectorLayer({
 		source: gridSource,
 		style: gridStyleFn,
@@ -548,6 +615,7 @@ onMounted(async () => {
 		layers: [
 			new TileLayer({ source: new OSM() }),
 			prefectureLayer,
+			zoneLayer,
 			gridLayer,
 			lighthouseLayer,
 			castleLayer,

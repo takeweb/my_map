@@ -12,6 +12,7 @@
 		"fetch-osm:dams": "node scripts/fetch-osm.mjs dams",
 		"fetch-osm:prefectures": "node scripts/fetch-osm.mjs prefectures",
 		"fetch-states": "node scripts/fetch-states.mjs",
+		"fetch-plane-zones": "node scripts/fetch-plane-zones.mjs",
 		"generate": "node scripts/fetch-osm.mjs && nuxt generate",
 		"preview": "nuxt preview",
 		"postinstall": "nuxt prepare",

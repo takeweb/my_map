@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm fetch-osm    # OSMデータをビルド時取得（public/data/*.json を生成）
 pnpm fetch-states # アメリカ合衆国・カナダの州境界を取得（public/data/us-states.geojson・canada-provinces.geojson を生成）
+pnpm fetch-plane-zones # 平面直角座標系の適用区域を生成（public/data/plane-rectangular-zones.geojson）
 pnpm dev          # 開発サーバー起動（データ取得済みの場合）
 pnpm dev:fetch    # OSMデータ取得 → 開発サーバー起動
 pnpm build        # サーバーレンダリングビルド（通常は未使用）
@@ -55,6 +56,8 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 - JGD2000 と JGD2011 は同じ GRS80・同じ原点なので、変換式は同一（違いは地殻変動による緯度経度そのものの改定で、変換パラメータでは表せない）
 - グリッドは `moveend` ごとに表示範囲から作り直す。間隔は表示範囲に応じて 100m〜200km から選ぶ。中央子午線から離れると横メルカトルが破綻するため、原点から経緯度 ±20° の範囲に限る
 - クリック・カーソル判定は `layerFilter` でポイントレイヤーだけを対象にする（グリッド線でポップアップが開かないように）
+- 選択中の系の適用区域を赤く塗り、系を切り替えるとその区域にズームする（`view.fit`）。区域データは `usePlaneRectangularZones` → `/data/plane-rectangular-zones.geojson` で、平面直角座標をオンにしたときに初めて取得する
+- 区域データは `scripts/fetch-plane-zones.mjs` が生成する。都道府県単位の系は `prefectures.geojson` を流用し、東京都・沖縄県・鹿児島県は告示の経緯度の線で切り分け、北海道は振興局・市町村の境界を Overpass から取得する。区域は変化しないため `pnpm generate` には含めない（`prefectures.geojson` を更新したら再生成する）
 
 ### MLB 球場マップ（`/mlb`）
 
