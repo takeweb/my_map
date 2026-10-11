@@ -466,16 +466,19 @@ watch(planeZones, (data) => {
 	}
 });
 
-// 選択中の系の区域が収まるようにズームする（右上のパネルの分だけ右側を空ける）
+// 選択中の系の区域と原点が収まるようにズームする（右上のパネルの分だけ右側を空ける）
+// XI系などは原点が区域の外（海上）にあるので、原点も範囲に含める
 function fitToZone() {
 	if (!map || !planeRect.enabled) return;
+	const { lat0, lon0 } = getZone(planeRect.zone);
+	const origin = fromLonLat([lon0, lat0]);
 	const extent = createEmpty();
+	extend(extent, [...origin, ...origin]);
 	for (const f of zoneSource.getFeatures()) {
 		if (f.get("zone") !== planeRect.zone) continue;
 		const geom = f.getGeometry();
 		if (geom) extend(extent, geom.getExtent());
 	}
-	if (!Number.isFinite(extent[0])) return;
 	// biome-ignore lint/suspicious/noFocusedTests: ol/View#fit であり Vitest の fit ではない
 	map.getView().fit(extent, {
 		padding: [60, 300, 60, 60],
