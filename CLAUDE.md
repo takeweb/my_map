@@ -72,6 +72,14 @@ TailwindCSS v4を使用。`@tailwindcss/vite` プラグインを `nuxt.config.ts
 
 `vercel.json` で `pnpm generate`（= OSMデータ取得 + `nuxt generate`）をビルドコマンドとして指定し、`.output/public` をスタティックファイルとして Vercel に配信する。`/:path*` のリライトで SPA ルーティングを有効化。
 
+### ブランチ運用
+
+- `develop`: 開発ブランチ。GitHub の既定ブランチ
+- `main`: リリースブランチ。Vercel の Production Branch で、`main` の更新が本番デプロイになる
+- 作業は `develop` から `feature/<内容>` ブランチを切り、`develop` へ PR を出す
+- リリースは `develop` → `main` の PR で行う。`main` へ直接 push しない
+- `Closes #<番号>` による issue の自動クローズは、既定ブランチ（`develop`）へのマージ時に行われる
+
 ## Coding Conventions
 
 - インデントはタブ、文字列はダブルクォート（Biome設定に従う）
