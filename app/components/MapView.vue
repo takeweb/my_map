@@ -825,10 +825,10 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- マウス位置の平面直角座標 -->
+    <!-- マウス位置の平面直角座標（左下の「MLB 球場マップ →」のリンク（pages/index.vue）と重ならないよう、その上に置く） -->
     <div
       v-if="planeRect.enabled && cursorCoord"
-      class="absolute bottom-6 left-4 rounded-lg bg-white/90 px-3 py-2 font-mono text-xs shadow-md"
+      class="absolute bottom-16 left-4 rounded-lg bg-white/90 px-3 py-2 font-mono text-xs shadow-md"
     >
       <p class="mb-1 font-sans font-bold text-gray-700">
         {{ planeRect.datum }} 平面直角座標 {{ planeRectZones[planeRect.zone - 1]?.roman }}系
