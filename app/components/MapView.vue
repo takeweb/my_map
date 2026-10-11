@@ -430,7 +430,13 @@ async function copyPlaneRect(coordinate: number[]) {
 	if (!planeRect.enabled) return;
 	const { x, y } = toPlaneRect(coordinate);
 	const [lon, lat] = toLonLat(coordinate) as [number, number];
-	const text = [x.toFixed(3), y.toFixed(3), lat.toFixed(6), lon.toFixed(6)];
+	const text = [
+		x.toFixed(3),
+		y.toFixed(3),
+		"/",
+		lat.toFixed(6),
+		lon.toFixed(6),
+	];
 	try {
 		await navigator.clipboard.writeText(text.join("\t"));
 		showCopyMessage("座標をコピーしました");
