@@ -413,8 +413,8 @@ function updateCursorCoord(coordinate: number[]) {
 	};
 }
 
-// クリックした位置の X・Y をクリップボードにコピーする
-// 表計算ソフトに貼ると2つのセルに分かれるようタブ区切りにする
+// クリックした位置の X・Y・緯度・経度をクリップボードにコピーする
+// 表計算ソフトに貼るとセルに分かれるようタブ区切りにする
 const copyMessage = ref<string | null>(null);
 let copyMessageTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -429,8 +429,10 @@ function showCopyMessage(message: string) {
 async function copyPlaneRect(coordinate: number[]) {
 	if (!planeRect.enabled) return;
 	const { x, y } = toPlaneRect(coordinate);
+	const [lon, lat] = toLonLat(coordinate) as [number, number];
+	const text = [x.toFixed(3), y.toFixed(3), lat.toFixed(6), lon.toFixed(6)];
 	try {
-		await navigator.clipboard.writeText(`${x.toFixed(3)}\t${y.toFixed(3)}`);
+		await navigator.clipboard.writeText(text.join("\t"));
 		showCopyMessage("座標をコピーしました");
 	} catch {
 		showCopyMessage("コピーできませんでした");
@@ -926,7 +928,7 @@ onUnmounted(() => {
       <p>X: {{ cursorCoord.x }} m</p>
       <p>Y: {{ cursorCoord.y }} m</p>
       <p class="mt-1 text-gray-500">{{ cursorCoord.lat }}, {{ cursorCoord.lon }}</p>
-      <p class="mt-1 font-sans text-gray-400">クリックで X・Y をコピー</p>
+      <p class="mt-1 font-sans text-gray-400">クリックで X・Y・緯度・経度をコピー</p>
     </div>
 
     <!-- コピーの結果 -->
