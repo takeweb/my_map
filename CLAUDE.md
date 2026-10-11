@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm fetch-osm    # OSMデータをビルド時取得（public/data/*.json を生成）
 pnpm fetch-states # アメリカ合衆国・カナダの州境界を取得（public/data/us-states.geojson・canada-provinces.geojson を生成）
+pnpm fetch-plane-zones # 平面直角座標系の適用区域を生成（public/data/plane-rectangular-zones.geojson）
 pnpm dev          # 開発サーバー起動（データ取得済みの場合）
 pnpm dev:fetch    # OSMデータ取得 → 開発サーバー起動
 pnpm build        # サーバーレンダリングビルド（通常は未使用）
@@ -47,6 +48,19 @@ SPAとして動作する地図アプリ（`ssr: false`）。Nuxt 4のファイ�
 
 `MapView.vue` では `Promise.all` で全データを並列フェッチし、`VectorLayer` をレイヤーごとに独立して管理する。右上のチェックボックスの変更は `watch` → `layer.setVisible()` で即時反映する。ポイントレイヤーのスタイルは関数形式で、`feature.get("prefecture_code")` が `visiblePrefCodes` に含まれない場合は `[]` を返して非表示にする。都道府県トグル変更時は `lighthouseSource.changed()` / `castleSource.changed()` / `damSource.changed()` を呼んで再描画する。
 
+### 平面直角座標（JGD2000・JGD2011）
+
+`MapView.vue` のレイヤー一覧で「平面直角座標」をオンにすると、選んだ測地系・系（I〜XIX）の X・Y グリッド線と、マウス位置の座標（X: 北方向、Y: 東方向、m）を表示する。系の定義・グリッド計算は `app/utils/planeRectangular.ts` にまとめている。
+
+- 投影法は `proj4` で EPSG:2443〜2461（JGD2000）・EPSG:6669〜6687（JGD2011）を定義し、`ol/proj/proj4` の `register` で OpenLayers に登録する（`registerPlaneRectangularProjections`）
+- JGD2000 と JGD2011 は同じ GRS80・同じ原点なので、変換式は同一（違いは地殻変動による緯度経度そのものの改定で、変換パラメータでは表せない）
+- グリッドは `moveend` ごとに表示範囲から作り直す。間隔は表示範囲に応じて 100m〜200km から選ぶ。中央子午線から離れると横メルカトルが破綻するため、原点から経緯度 ±20° の範囲に限る
+- クリック・カーソル判定は `layerFilter` でポイントレイヤーだけを対象にする（グリッド線でポップアップが開かないように）
+- 地図をクリックすると、その位置の X・Y（小数3桁）と緯度・経度（小数6桁）をタブ区切りでクリップボードにコピーする（`singleclick` で、ダブルクリックのズームでは反応しない。灯台・城・ダムのマーカーの上ではコピーしない）
+- 選択中の系の原点（X=0, Y=0）に系名と経緯度付きのマーカーを出す
+- 選択中の系の適用区域を赤く塗り、系を切り替えるとその区域と原点が収まるようにズームする（`view.fit`。XI系などは原点が区域外の海上にある）。区域データは `usePlaneRectangularZones` → `/data/plane-rectangular-zones.geojson` で、平面直角座標をオンにしたときに初めて取得する
+- 区域データは `scripts/fetch-plane-zones.mjs` が生成する。都道府県単位の系は `prefectures.geojson` を流用し、東京都・沖縄県・鹿児島県は告示の経緯度の線で切り分け、北海道は振興局・市町村の境界を Overpass から取得する。区域は変化しないため `pnpm generate` には含めない（`prefectures.geojson` を更新したら再生成する）
+
 ### MLB 球場マップ（`/mlb`）
 
 `app/pages/mlb.vue` → `app/components/MlbMapView.vue`。日本の地図（`MapView.vue`）とは独立した OpenLayers インスタンスを持つ。
@@ -71,6 +85,14 @@ TailwindCSS v4を使用。`@tailwindcss/vite` プラグインを `nuxt.config.ts
 ### デプロイ
 
 `vercel.json` で `pnpm generate`（= OSMデータ取得 + `nuxt generate`）をビルドコマンドとして指定し、`.output/public` をスタティックファイルとして Vercel に配信する。`/:path*` のリライトで SPA ルーティングを有効化。
+
+### ブランチ運用
+
+- `develop`: 開発ブランチ。GitHub の既定ブランチ
+- `main`: リリースブランチ。Vercel の Production Branch で、`main` の更新が本番デプロイになる
+- 作業は `develop` から `feature/<内容>` ブランチを切り、`develop` へ PR を出す
+- リリースは `develop` → `main` の PR で行う。`main` へ直接 push しない
+- `Closes #<番号>` による issue の自動クローズは、既定ブランチ（`develop`）へのマージ時に行われる
 
 ## Coding Conventions
 
