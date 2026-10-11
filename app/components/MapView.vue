@@ -414,7 +414,7 @@ function updateCursorCoord(coordinate: number[]) {
 }
 
 // クリックした位置の X・Y・緯度・経度をクリップボードにコピーする
-// 表計算ソフトに貼るとセルに分かれるようタブ区切りにする
+// X・Y と緯度・経度はそれぞれタブ区切り、その間は「 / 」で区切る
 const copyMessage = ref<string | null>(null);
 let copyMessageTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -430,15 +430,10 @@ async function copyPlaneRect(coordinate: number[]) {
 	if (!planeRect.enabled) return;
 	const { x, y } = toPlaneRect(coordinate);
 	const [lon, lat] = toLonLat(coordinate) as [number, number];
-	const text = [
-		x.toFixed(3),
-		y.toFixed(3),
-		"/",
-		lat.toFixed(6),
-		lon.toFixed(6),
-	];
+	const planeText = `${x.toFixed(3)}\t${y.toFixed(3)}`;
+	const latLonText = `${lat.toFixed(6)}\t${lon.toFixed(6)}`;
 	try {
-		await navigator.clipboard.writeText(text.join("\t"));
+		await navigator.clipboard.writeText(`${planeText} / ${latLonText}`);
 		showCopyMessage("座標をコピーしました");
 	} catch {
 		showCopyMessage("コピーできませんでした");
